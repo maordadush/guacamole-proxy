@@ -10,6 +10,7 @@ from config import EnvConfig
 
 config = EnvConfig()
 config.guacamole_server_port = 8080
+config.middleware_api_port = 8084
 
 logging.basicConfig(level=config.log_level)
 
@@ -44,7 +45,7 @@ async def ws_proxy(client_socket: WebSocket):
                     input_message = input_message[:-5]
                     input_message += '.pdf;'
                     await asyncio.sleep(15)
-                if server_socket.is_open:
+                if server_socket.open:
                     await server_socket.send(input_message)
 
             async def handle_websocket_input():
