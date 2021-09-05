@@ -1,10 +1,11 @@
 import logging
 
 from fastapi import FastAPI, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketDisconnect
 import websockets
 import asyncio
-from fastapi.middleware.cors import CORSMiddleware
+import aiohttp
 
 from config import EnvConfig
 
@@ -37,22 +38,11 @@ async def ws_proxy(client_socket: WebSocket):
 
         logging.info(f'Successfully connected to webserver. token: {client_socket.query_params.get("token")}')
         try:
-            async def handle_put_input(input_message):
-                filepath_part_index = input_message.rfind(',') + 1
-                filepath_part = input_message[filepath_part_index:]
-                filename = filepath_part[filepath_part.rfind('/') + 1:-1]
-                if len(filename.split('.')) > 1 and filename.split('.')[1] == 'doc':
-                    input_message = input_message[:-5]
-                    input_message += '.pdf;'
-                    await asyncio.sleep(15)
-                if server_socket.open:
-                    await server_socket.send(input_message)
-
             async def handle_websocket_input():
                 while True:
                     input_message = await client_socket.receive_text()
                     if 'put' in input_message:
-                        asyncio.create_task(handle_put_input(input_message))
+                        asyncio.create_task(handle_file_put(input_message, server_socket))
                     else:
                         await server_socket.send(input_message)
             
@@ -69,3 +59,37 @@ async def ws_proxy(client_socket: WebSocket):
         except WebSocketDisconnect:
             logging.info(f'Client conneection closed, terminating connection with webserver socket. token: {client_socket.query_params.get("token")}')
             await server_socket.close()
+
+
+async def handle_file_put(input_message, websocket):
+    filepart_index, filepart_content = get_filepart_from_put_message(input_message)
+    # Guacamole protocol message part are formatted as: {length_of_content}.{content}, this extracts the content
+    filepath = filepart_content[filepart_content.find('.') + 1:]
+    filepath_extension_index = filepath.rfind('.')
+    if filepath_extension_index == -1:
+        await websocket.send(input_message)
+    file_extension = filepath[filepath_extension_index + 1:-1]
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            f'http://{config.middleware_api_host}:{config.middleware_api_port}/file_extension', data=file_extension) as response:
+            if response.status == 200:
+                new_file_extension = await response.text()
+                filepath_without_extension = filepath[:filepath_extension_index]
+                filepath_with_new_extension = f'{filepath_without_extension}.{new_file_extension}'
+                input_message_without_file_part = input_message[:filepart_index]
+                new_input_message = f'{input_message_without_file_part}{str(len(filepath_with_new_extension))}.{filepath_with_new_extension};'
+                await websocket.send(new_input_message)
+            else:
+                if response.status != 204:
+                    logging.warn(f'Middleware API file extension endpoint returned an unknown status code: {response.status}. Sending original file extension')
+                await websocket.send(input_message)
+
+def get_filepart_from_put_message(input_message):
+    # We know the file part is the 5th part in every put message
+    # Remove parts from the beginning of the message (can't be done from the end because filename might contain commas)
+    file_part_index = 0
+    for _ in range(4):
+        part_index = input_message.find(',') + 1
+        input_message = input_message[part_index:]
+        file_part_index += part_index
+    return file_part_index, input_message

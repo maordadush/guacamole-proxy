@@ -16,7 +16,7 @@ app.add_middleware(
 
 @app.post('/upload')
 async def verify_upload(request: Request):
-    time.sleep(30)
+    return Response(status_code=204)
     content = str(await request.body())
     if 'GOOD_NO_CHANGE' in content:
         return Response(status_code=204)
@@ -28,7 +28,7 @@ async def verify_upload(request: Request):
 
 @app.post('/download')
 async def verify_download(request: Request):
-    time.sleep(30)
+    return Response(status_code=204)
     content = str(await request.body())
     if 'GOOD_NO_CHANGE' in content:
         return Response(status_code=204)
@@ -37,3 +37,12 @@ async def verify_download(request: Request):
     elif 'BAD' in content:
         return Response(status_code=403)
     return Response(status_code=500)
+
+@app.post('/file_extension')
+async def modify_file_extension(request: Request):
+    file_extesion = (await request.body()).decode('utf-8')
+    if file_extesion == 'docx':
+        return Response('pdf'.encode(), status_code=200)
+    if file_extesion == 'jpg':
+        return Response('jpeg'.encode(), status_code=200)
+    return Response(status_code=204)
