@@ -10,8 +10,6 @@ import aiohttp
 from config import EnvConfig
 
 config = EnvConfig()
-config.guacamole_server_port = 8080
-config.middleware_api_port = 8084
 
 logging.basicConfig(level=config.log_level)
 

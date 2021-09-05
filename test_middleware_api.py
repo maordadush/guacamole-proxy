@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
-import time
 
 app = FastAPI()
 
