@@ -32,14 +32,14 @@ async def proxy_download(request: Request):
     if not guacamole_response.ok:
         return Response(status_code=500)
 
-    original_file_content = guacamole_response.text
+    original_file_content = guacamole_response.content
     middleware_response = requests.post(
         f'http://{config.middleware_api_host}:{config.middleware_api_port}/download', data=original_file_content)
     if middleware_response.status_code == 204:
         return Response(original_file_content, media_type=octet_stream_media_type)
 
     elif middleware_response.status_code == 200:
-        modified_file_content = middleware_response.text
+        modified_file_content = middleware_response.content
         return Response(modified_file_content, media_type=octet_stream_media_type)
 
     elif middleware_response.status_code == 403:
