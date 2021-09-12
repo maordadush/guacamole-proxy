@@ -5,10 +5,10 @@ formatters:
     format: "%(message)s"
 handlers:
   message_only_stream:
-    class: logging.StreamHandler
+    class: logging.FileHandler
     level: INFO
     formatter: message_only
-    stream: ext://sys.stdout
+    filename: keystrokes.log
 loggers:
   keystrokes:
     level: INFO
