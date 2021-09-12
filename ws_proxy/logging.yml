@@ -1,0 +1,16 @@
+version: 1
+disable_existing_loggers: False
+formatters:
+  message_only:
+    format: "%(message)s"
+handlers:
+  message_only_stream:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: message_only
+    stream: ext://sys.stdout
+loggers:
+  keystrokes:
+    level: INFO
+    handlers: [message_only_stream]
+    propagate: no
