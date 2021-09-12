@@ -1,4 +1,5 @@
 import logging
+from logging import handlers
 from datetime import datetime
 from typing import Tuple
 
@@ -17,7 +18,10 @@ logging.basicConfig(level=config.log_level)
 
 # Keystrokes
 keystrokes_queue = asyncio.Queue()
+rotating_handler = handlers.RotatingFileHandler('keystrokes.log', 'a', 2000, 10)
+rotating_handler.setFormatter(logging.Formatter('%(message)s'))
 keystrokes_logger = logging.getLogger('keystrokes')
+keystrokes_logger.addHandler(rotating_handler)
 
 app = FastAPI()
 
