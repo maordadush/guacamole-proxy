@@ -1,5 +1,5 @@
+from pathlib import Path
 import logging
-from logging import handlers
 from datetime import datetime
 from typing import Tuple
 
@@ -10,18 +10,24 @@ import websockets
 import asyncio
 import aiohttp
 
-from config import EnvConfig
+from .config import WebsocketProxyConfig
+from custom_loggers import ReverseRotatingFileHandler
 
-config = EnvConfig()
+config = WebsocketProxyConfig()
 
 logging.basicConfig(level=config.log_level)
 
-# Keystrokes
+# User events logging
+
 keystrokes_queue = asyncio.Queue()
-rotating_handler = handlers.RotatingFileHandler('keystrokes.log', 'a', 2000, 10)
-rotating_handler.setFormatter(logging.Formatter('%(message)s'))
-keystrokes_logger = logging.getLogger('keystrokes')
-keystrokes_logger.addHandler(rotating_handler)
+Path(config.user_events_log_path).mkdir(parents=True, exist_ok=True)
+reverse_rotating_handler = ReverseRotatingFileHandler(
+    f'{config.user_events_log_path}/user_events.log', 'a', config.user_events_log_size, config.user_events_log_backup)
+message_only_formatter = logging.Formatter('%(message)s')
+reverse_rotating_handler.setFormatter(message_only_formatter)
+user_events_logger = logging.getLogger('user-events')
+user_events_logger.addHandler(reverse_rotating_handler)
+user_events_logger.propagate = False
 
 app = FastAPI()
 
@@ -76,7 +82,7 @@ async def log_keystrokes():
     while True:
         input_message = await keystrokes_queue.get()
         timestamp, keystroke, pressed = parse_keystroke_message(input_message)
-        keystrokes_logger.info(f'{timestamp} - {keystroke}:{pressed}')
+        user_events_logger.info(f'{timestamp} - {keystroke}:{pressed}')
 
 async def handle_file_put(input_message: str, websocket: WebSocket):
     filepart_index, filepart_content = get_filepart_from_put_message(input_message)
