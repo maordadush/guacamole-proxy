@@ -19,7 +19,7 @@ logging.basicConfig(level=config.log_level)
 
 # User events logging
 
-keystrokes_queue = asyncio.Queue()
+user_events_queue = asyncio.Queue()
 Path(config.user_events_log_path).mkdir(parents=True, exist_ok=True)
 reverse_rotating_handler = ReverseRotatingFileHandler(
     f'{config.user_events_log_path}/user_events.log', 'a', config.user_events_log_size, config.user_events_log_backup)
@@ -58,8 +58,8 @@ async def ws_proxy(client_socket: WebSocket):
                     message_type = input_message.split(',')[0].split('.')[1]
                     if message_type == 'put':
                         asyncio.create_task(handle_file_put(input_message, server_socket))
-                    elif message_type == 'keyTimestamp':
-                        keystrokes_queue.put_nowait(input_message)
+                    elif message_type == 'custom-message':
+                        user_events_queue.put_nowait(input_message)
                     else:
                         await server_socket.send(input_message)
             
@@ -68,7 +68,7 @@ async def ws_proxy(client_socket: WebSocket):
                     await client_socket.send_bytes(output_message)
 
             # Blocks while running asynchronously
-            await asyncio.gather(handle_websocket_input(), handle_websocket_output(), log_keystrokes())
+            await asyncio.gather(handle_websocket_input(), handle_websocket_output(), log_user_events())
 
         except websockets.exceptions.ConnectionClosed:
             logging.info(f'Webserver connection closed, terminating connection with client socket. token: {client_socket.query_params.get("token")}')
@@ -78,11 +78,21 @@ async def ws_proxy(client_socket: WebSocket):
             await server_socket.close()
 
 
-async def log_keystrokes():
+async def log_user_events():
     while True:
-        input_message = await keystrokes_queue.get()
-        timestamp, keystroke, pressed = parse_keystroke_message(input_message)
-        user_events_logger.info(f'{timestamp} - {keystroke}:{pressed}')
+        input_message = await user_events_queue.get()
+        event_type = get_part(input_message, 1)
+        if event_type == 'key':
+            keycode = int(get_part(input_message, 2))
+            pressed = int(get_part(input_message, 3)) == 1
+            timestamp = datetime.fromtimestamp(int(get_part(input_message, 4)) / 1000)
+            user_events_logger.info(f'{event_type},{timestamp},{keycode},{pressed}')
+        elif event_type == 'mouse':
+            x = int(get_part(input_message, 2))
+            y = int(get_part(input_message, 3))
+            pressed = int(get_part(input_message, 4)) == 1
+            timestamp = datetime.fromtimestamp(int(get_part(input_message, 5)) / 1000)
+            user_events_logger.info(f'{event_type},{timestamp},{x},{y},{pressed}')
 
 async def handle_file_put(input_message: str, websocket: WebSocket):
     filepart_index, filepart_content = get_filepart_from_put_message(input_message)
@@ -119,10 +129,10 @@ def get_filepart_from_put_message(input_message: str) -> Tuple[int, str]:
         file_part_index += part_index
     return file_part_index, input_message
 
-def parse_keystroke_message(input_message: str) -> Tuple[datetime, int, bool]:
-    input_message = input_message[:-1] # Remove the semicolon at the end of the message
-    parts = input_message.split(',')
-    keycode = int(parts[1].split('.')[1])
-    pressed = int(parts[2].split('.')[1]) == 1
-    timestamp = datetime.fromtimestamp(int(parts[3].split('.')[1]) / 1000)
-    return timestamp, keycode, pressed
+def get_part(input_message: str, index: int) -> str:
+    """
+    Get a guacamole message part content, by index
+    """
+    input_message = input_message[:-1]  # Remove the semicolon at the end of the message
+    return input_message.split(',')[index].split('.')[1]
+
