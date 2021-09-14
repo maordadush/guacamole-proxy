@@ -10,10 +10,10 @@ import websockets
 import asyncio
 import aiohttp
 
-from .config import WebsocketProxyConfig
+from config import EnvConfig
 from custom_loggers import ReverseRotatingFileHandler
 
-config = WebsocketProxyConfig()
+config = EnvConfig()
 
 logging.basicConfig(level=config.log_level)
 
@@ -67,7 +67,7 @@ async def ws_proxy(client_socket: WebSocket):
                 async for output_message in server_socket:
                     await client_socket.send_bytes(output_message)
 
-            # Blocks while both run simultaneously
+            # Blocks while running asynchronously
             await asyncio.gather(handle_websocket_input(), handle_websocket_output(), log_keystrokes())
 
         except websockets.exceptions.ConnectionClosed:
