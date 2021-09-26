@@ -1,7 +1,10 @@
-import logging
+import json
 
+import requests
+import asyncio
 from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import StreamingResponse
 
 app = FastAPI()
 
@@ -21,8 +24,12 @@ async def verify_upload(request: Request):
 
 @app.post('/download')
 async def verify_download(request: Request):
-    body = await request.body()
-    return Response(status_code=200, content=body)
+    body = json.loads(await request.body())
+    url = body['url']
+    params = body['params']
+    response = requests.get(url, params=params, stream=True)
+    await asyncio.sleep(10)  # Validating file
+    return StreamingResponse(response.iter_content(1024*32))
 
 @app.post('/file_extension')
 async def modify_file_extension(request: Request):
