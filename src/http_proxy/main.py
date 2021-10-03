@@ -54,7 +54,7 @@ async def proxy_download(request: Request):
                                             data=json.dumps(guacamole_request), stream=True)
 
         if middleware_response.status_code == 200:
-            for chunk in zip_stream.write_content(middleware_response.iter_content(1024*32), zip_info):
+            for chunk in zip_stream.write_content(middleware_response.iter_content(1024*1024), zip_info):
                 yield chunk
         for chunk in zip_stream._ZipFile__close():
             yield chunk

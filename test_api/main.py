@@ -29,7 +29,7 @@ async def verify_download(request: Request):
     params = body['params']
     response = requests.get(url, params=params, stream=True)
     await asyncio.sleep(10)  # Validating file
-    return StreamingResponse(response.iter_content(1024*32))
+    return StreamingResponse(response.iter_content(1024*1024))
 
 @app.post('/file_extension')
 async def modify_file_extension(request: Request):
