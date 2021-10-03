@@ -25,25 +25,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.get('/test_stream')
-async def foo(request: Request):
-    async def generator():
-        # yield b'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\\0\0\0\0\0\0\0\0\0\0'
-        # await asyncio.sleep(5) # Simulate long running task to retrieve data
-        yield 'data'
-    return StreamingResponse(generator())
-
-
 @app.get('/files')
 async def proxy_download(request: Request):
     original_uri = request.headers['x-original-uri']
+    original_filename = original_uri[original_uri.rfind('/') + 1:]
+    zipped_filename = f'{original_filename}.zip'
     octet_stream_media_type = 'application/octet-stream'
 
     def get_file_content_iterator():
         # Wrapping file content in a zip in order to return any valid data ASAP (zip file header)
         zip_stream = ZipFile(mode='w')
-        zip_header, zip_info = zip_stream.write_header('test', compress_type=ZIP_DEFLATED)
+        zip_header, zip_info = zip_stream.write_header(original_filename, compress_type=ZIP_DEFLATED)
         yield zip_header
 
         guacamole_request = {
@@ -62,7 +54,7 @@ async def proxy_download(request: Request):
             yield chunk
         
 
-    return StreamingResponse(get_file_content_iterator(), media_type=octet_stream_media_type)
+    return StreamingResponse(get_file_content_iterator(), media_type=octet_stream_media_type, headers={'Content-Disposition': f'attachment; filename="{zipped_filename}"'})
 
 
 @app.post('/files')
