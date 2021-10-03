@@ -56,6 +56,8 @@ async def proxy_download(request: Request):
         if middleware_response.status_code == 200:
             for chunk in zip_stream.write_content(middleware_response.iter_content(1024*1024), zip_info):
                 yield chunk
+        else:
+            raise StopIteration()
         for chunk in zip_stream._ZipFile__close():
             yield chunk
         
