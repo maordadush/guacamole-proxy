@@ -40,7 +40,6 @@ class ReverseRotatingFileHandler(RotatingFileHandler):
                 try:
                     os.remove(log_file)
                 except PermissionError:
-                    print(f'Failed to delete log file, file in use: {os.path.basename(self.baseFilename)}')
                     # Fail silently when a process is locking the file.
                     # We assume when the last process to lock file rolls over, it will delete it
                     pass
