@@ -12,7 +12,7 @@ import aiohttp
 
 from config import EnvConfig
 from custom_loggers import ReverseRotatingFileHandler
-from ws_proxy.guac_message import get_part, get_part_content, remove_datetime_from_modified_message, split_multimessage
+from guac_message import get_part, get_part_content, remove_datetime_from_modified_message, split_multimessage
 
 config = EnvConfig()
 
@@ -48,6 +48,7 @@ async def http_tunnel_proxy(request: Request):
     action = list(request._query_params._dict.keys())[0]
     original_request = f'http://{config.guacamole_server_host}:{config.guacamole_server_port}{request.headers["x-original-uri"]}?{action}'
     request_body = await request.body()
+    username = request.headers.get('x-username')
     async with aiohttp.ClientSession() as session:
         request_body = request_body.decode('utf-8')
         if action.startswith('write'):
@@ -58,7 +59,7 @@ async def http_tunnel_proxy(request: Request):
                 if message_type == 'put':
                     message = await get_modified_file_extension(message)
                 elif message_type == 'mouse' or message_type == 'key':
-                    log_user_event(message)
+                    log_user_event(username, message)
                     message = remove_datetime_from_modified_message(message)
                 messages += message
 
@@ -87,8 +88,9 @@ async def http_tunnel_proxy(request: Request):
 @app.websocket('/ws_tunnel')
 async def ws_tunnel_proxy(client_socket: WebSocket):
     await client_socket.accept('guacamole')
-    logging.info(
-        f'Accepted client connection. token: {client_socket.query_params.get("token")}')
+    username = client_socket.query_params.get('username')
+    token = client_socket.query_params.get('token')
+    logging.info(f'Accepted client connection. username: {username}, token: {token}')
     guacamole_websocket_uri = f'ws://{config.guacamole_server_host}:{config.guacamole_server_port}\
         /guacamole/websocket-tunnel?{str(client_socket.query_params)}'
     async with websockets.connect(guacamole_websocket_uri, subprotocols=['guacamole'], max_size=None,
@@ -106,7 +108,7 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
                             input_message, server_socket))
                     else:
                         if message_type == 'mouse' or message_type == 'key':
-                            user_events_queue.put_nowait(input_message)
+                            user_events_queue.put_nowait((username, input_message))
                             input_message = remove_datetime_from_modified_message(input_message)
                         await server_socket.send(input_message)
 
@@ -119,20 +121,20 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
 
         except websockets.exceptions.ConnectionClosed:
             logging.info(
-                f'Webserver connection closed, terminating connection with client socket. token: {client_socket.query_params.get("token")}')
+                f'Webserver connection closed, terminating connection with client socket. username: {username}, token: {token}')
             await client_socket.close()
         except WebSocketDisconnect:
             logging.info(
-                f'Client conneection closed, terminating connection with webserver socket. token: {client_socket.query_params.get("token")}')
+                f'Client conneection closed, terminating connection with webserver socket. username: {username}, token: {token}')
             await server_socket.close()
 
 
 async def log_user_events_loop():
     while True:
-        input_message = await user_events_queue.get()
-        log_user_event(input_message)
+        username, input_message = await user_events_queue.get()
+        log_user_event(username, input_message)
 
-def log_user_event(input_message):
+def log_user_event(username: str, input_message: str):
     event_type = get_part_content(input_message, 0)
     if event_type == 'key':
         keycode = int(get_part_content(input_message, 1))
@@ -148,7 +150,7 @@ def log_user_event(input_message):
         timestamp = datetime.fromtimestamp(
             int(get_part_content(input_message, 4)) / 1000)
         user_events_logger.info(
-            f'{event_type},{timestamp},{x},{y},{pressed}')
+            f'{username},{event_type},{timestamp},{x},{y},{pressed}')
 
 
 async def handle_websocket_put(input_message: str, websocket: WebSocket):
