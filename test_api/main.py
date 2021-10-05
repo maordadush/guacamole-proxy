@@ -20,6 +20,7 @@ app.add_middleware(
 
 @app.post('/upload')
 async def verify_upload(request: Request):
+    await asyncio.sleep(10)
     return Response(status_code=204)
 
 @app.post('/download')
