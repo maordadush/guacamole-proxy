@@ -150,7 +150,7 @@ def log_user_event(username: str, input_message: str):
         timestamp = datetime.fromtimestamp(
             int(get_part_content(input_message, 3)) / 1000)
         user_events_logger.info(
-            f'{event_type},{timestamp},{keycode},{pressed}')
+            f'{username},{event_type},{timestamp},{keycode},{pressed}')
     elif event_type == 'mouse':
         x = int(get_part_content(input_message, 1))
         y = int(get_part_content(input_message, 2))
