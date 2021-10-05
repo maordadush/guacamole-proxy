@@ -108,9 +108,6 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
                     if message_type == 'put':
                         asyncio.create_task(handle_websocket_put(
                             input_message, server_socket))
-                    if message_type == 'blob':
-                        print(f'to server clipboard: {base64.b64decode(get_part_content(input_message, 2)).decode("utf-8")}')
-                        await server_socket.send(input_message)
                     else:
                         if message_type == 'mouse' or message_type == 'key':
                             user_events_queue.put_nowait((username, input_message))
@@ -119,9 +116,6 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
 
             async def handle_websocket_output():
                 async for output_message in server_socket:
-                    message_type = get_part_content(output_message, 0)
-                    if message_type == 'clipboard':
-                        print(f'to client clipboard: {base64.b64decode(get_part_content(output_message, 5)).decode("utf-8")}')
                     await client_socket.send_bytes(output_message)
 
             # Blocks while running asynchronously
