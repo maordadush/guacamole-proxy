@@ -22,7 +22,6 @@ logging.basicConfig(level=config.log_level)
 
 # User events logging
 
-user_events_queue = asyncio.Queue()
 Path(config.user_events_log_path).mkdir(parents=True, exist_ok=True)
 reverse_rotating_handler = ReverseRotatingFileHandler(
     f'{config.user_events_log_path}/user_events.log', 'a', config.user_events_log_size, config.user_events_log_backup)
@@ -61,7 +60,7 @@ async def http_tunnel_proxy(request: Request):
                 if message_type == 'put':
                     message = await get_modified_file_extension(message)
                 elif message_type == 'mouse' or message_type == 'key':
-                    log_user_event(username, message)
+                    asyncio.create_task(log_user_event(username, message))
                     message = remove_datetime_from_modified_message(message)
                 messages += message
 
@@ -110,7 +109,7 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
                             input_message, server_socket))
                     else:
                         if message_type == 'mouse' or message_type == 'key':
-                            user_events_queue.put_nowait((username, input_message))
+                            asyncio.create_task(log_user_event(username, input_message))
                             input_message = remove_datetime_from_modified_message(input_message)
                         await server_socket.send(input_message)
 
@@ -119,7 +118,7 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
                     await client_socket.send_bytes(output_message)
 
             # Blocks while running asynchronously
-            await asyncio.gather(handle_websocket_input(), handle_websocket_output(), log_user_events_loop())
+            await asyncio.gather(handle_websocket_input(), handle_websocket_output())
 
         except websockets.exceptions.ConnectionClosed:
             logging.info(
@@ -131,12 +130,7 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
             await server_socket.close()
 
 
-async def log_user_events_loop():
-    while True:
-        username, input_message = await user_events_queue.get()
-        log_user_event(username, input_message)
-
-def log_user_event(username: str, input_message: str):
+async def log_user_event(username: str, input_message: str):
     event_type = get_part_content(input_message, 0)
     if event_type == 'key':
         keycode = int(get_part_content(input_message, 1))
