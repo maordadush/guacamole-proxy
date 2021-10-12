@@ -42,7 +42,7 @@ async def proxy_download(request: Request):
             'url': f'http://{config.guacamole_server_host}:{config.guacamole_server_port}{original_uri}',
             'params': request.query_params._dict
         }
-        middleware_response = requests.post(f'http://{config.middleware_api_host}:{config.middleware_api_port}/download',
+        middleware_response = requests.post(f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/download',
                                             data=json.dumps(guacamole_request), stream=True)
 
         if middleware_response.status_code == 200:
@@ -65,7 +65,7 @@ async def proxy_upload(request: Request):
 
     original_file_content = await request.body()
     middleware_response = requests.post(
-        f'http://{config.middleware_api_host}:{config.middleware_api_port}/upload', data=original_file_content)
+        f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/upload', data=original_file_content)
 
     if middleware_response.status_code == 204:
         guacamole_response = requests.post(

@@ -93,7 +93,7 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
     token = client_socket.query_params.get('token')
     logging.info(f'Accepted client connection. username: {username}, token: {token}')
     guacamole_websocket_uri = f'ws://{config.guacamole_server_host}:{config.guacamole_server_port}\
-        /guacamole/websocket-tunnel?{str(client_socket.query_params)}'
+        /websocket-tunnel?{str(client_socket.query_params)}'
     async with websockets.connect(guacamole_websocket_uri, subprotocols=['guacamole'], max_size=None,
                                   extra_headers=client_socket.headers.raw, compression=None, max_queue=None) as server_socket:
 
@@ -165,7 +165,7 @@ async def get_modified_file_extension(input_message: str) -> str:
     file_extension = filepath[filepath_extension_index + 1:]
     async with aiohttp.ClientSession() as session:
         async with session.post(
-                f'http://{config.middleware_api_host}:{config.middleware_api_port}/file_extension', data=file_extension) as response:
+                f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/file_extension', data=file_extension) as response:
             if response.status == 200:
                 new_file_extension = await response.text()
                 filepath_without_extension = filepath[:filepath_extension_index]

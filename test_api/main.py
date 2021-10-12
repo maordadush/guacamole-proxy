@@ -18,12 +18,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post('/upload')
+@app.post('/validations/upload')
 async def verify_upload(request: Request):
     await asyncio.sleep(10)
     return Response(status_code=204)
 
-@app.post('/download')
+@app.post('/validations/download')
 async def verify_download(request: Request):
     body = json.loads(await request.body())
     url = body['url']
@@ -32,7 +32,7 @@ async def verify_download(request: Request):
     await asyncio.sleep(10)  # Validating file
     return StreamingResponse(response.iter_content(1024*1024))
 
-@app.post('/file_extension')
+@app.post('/validations/file_extension')
 async def modify_file_extension(request: Request):
     file_extesion = (await request.body()).decode('utf-8')
     if file_extesion == 'docx':
