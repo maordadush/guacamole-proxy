@@ -44,7 +44,7 @@ app.add_middleware(
 )
 
 
-@app.post('/http_tunnel')
+@app.post('/proxy/tunnel/http')
 async def http_tunnel_proxy(request: Request):
     action = list(request._query_params._dict.keys())[0]
     original_request = f'http://{config.guacamole_server_host}:{config.guacamole_server_port}{request.headers["x-original-uri"]}?{action}'
@@ -73,7 +73,7 @@ async def http_tunnel_proxy(request: Request):
             return Response(content=response_body, status_code=response.status)
 
 
-@app.get('/http_tunnel')
+@app.get('/proxy/tunnel/http')
 async def http_tunnel_proxy(request: Request):
     original_request = f'http://{config.guacamole_server_host}:{config.guacamole_server_port}{request.headers["x-original-uri"]}?{list(request._query_params._dict.keys())[0]}'
     request_body = await request.body()
@@ -86,7 +86,7 @@ async def http_tunnel_proxy(request: Request):
     return StreamingResponse(response_iterator())
 
 
-@app.websocket('/ws_tunnel')
+@app.websocket('/proxy/tunnel/ws')
 async def ws_tunnel_proxy(client_socket: WebSocket):
     await client_socket.accept('guacamole')
     username = client_socket.query_params.get('username')

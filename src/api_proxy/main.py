@@ -25,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get('/files')
+@app.get('/proxy/api/files')
 async def proxy_download(request: Request):
     original_uri = request.headers['x-original-uri']
     original_filename = original_uri[original_uri.rfind('/') + 1:]
@@ -57,7 +57,7 @@ async def proxy_download(request: Request):
     return StreamingResponse(get_file_content_iterator(), media_type=octet_stream_media_type, headers={'Content-Disposition': f'attachment; filename="{zipped_filename}"'})
 
 
-@app.post('/files')
+@app.post('/proxy/api/files')
 async def proxy_upload(request: Request):
     original_uri = request.headers['x-original-uri']
     octet_stream_media_type = 'application/octet-stream'
