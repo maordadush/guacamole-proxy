@@ -44,6 +44,10 @@ app.add_middleware(
 )
 
 
+@app.get('/proxy/tunnel/_health')
+async def health_check():
+    return Response(status_code=200)
+
 @app.post('/proxy/tunnel/http')
 async def http_tunnel_proxy(request: Request):
     action = list(request._query_params._dict.keys())[0]
