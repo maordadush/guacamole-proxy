@@ -1,5 +1,6 @@
 import json
 import logging
+from urllib.parse import quote
 
 import requests
 from fastapi import FastAPI, Response, Request
@@ -76,7 +77,8 @@ async def proxy_upload(request: Request):
     original_uri = request.headers['x-original-uri']
     filename = original_uri[original_uri.rfind('/') + 1:]
     octet_stream_media_type = 'application/octet-stream'
-    guacamole_upload_uri = f'http://{config.guacamole_server_host}:{config.guacamole_server_port}{original_uri}'
+    url_encoded_original_uri = quote(original_uri, safe='/')
+    guacamole_upload_uri = f'http://{config.guacamole_server_host}:{config.guacamole_server_port}{url_encoded_original_uri}'
 
     logging.debug(
         f'Received upload file request. Username: {username}, filename: {filename}, token: {token}')
