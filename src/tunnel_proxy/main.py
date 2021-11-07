@@ -48,53 +48,11 @@ app.add_middleware(
 async def health_check():
     return Response(status_code=200)
 
-@app.post('/proxy/tunnel/http')
-async def http_tunnel_proxy(request: Request):
-    action = list(request._query_params._dict.keys())[0]
-    original_request = f'http://{config.guacamole_server_host}:{config.guacamole_server_port}{request.headers["x-original-uri"]}?{action}'
-    request_body = await request.body()
-    username = request.headers.get('x-username')
-    async with aiohttp.ClientSession() as session:
-        request_body = request_body.decode('utf-8')
-        if action.startswith('write'):
-            messages = ''
-            split_messages = split_multimessage(request_body)
-            for message in split_messages:
-                message_type = get_part_content(message, 0)
-                if message_type == 'put':
-                    message = await get_modified_file_extension(message)
-                elif message_type == 'mouse' or message_type == 'key':
-                    asyncio.create_task(log_user_event(username, message))
-                    message = remove_datetime_from_modified_message(message)
-                messages += message
-
-            request_body = messages
-
-        headers = request.headers.mutablecopy()
-        headers['content-length'] = str(len(request_body))
-        async with session.post(original_request, data=request_body, headers=headers) as response:
-            response_body = await response.read()
-            return Response(content=response_body, status_code=response.status)
-
-
-@app.get('/proxy/tunnel/http')
-async def http_tunnel_proxy(request: Request):
-    original_request = f'http://{config.guacamole_server_host}:{config.guacamole_server_port}{request.headers["x-original-uri"]}?{list(request._query_params._dict.keys())[0]}'
-    request_body = await request.body()
-
-    async def response_iterator():
-        async with aiohttp.ClientSession() as session:
-            async with session.get(original_request, data=request_body) as response:
-                async for chunk, _ in response.content.iter_chunks():
-                    yield chunk
-    return StreamingResponse(response_iterator())
-
-
 @app.websocket('/proxy/tunnel/ws')
 async def ws_tunnel_proxy(client_socket: WebSocket):
     await client_socket.accept('guacamole')
-    username = client_socket.query_params.get('username')
     token = client_socket.query_params.get('token')
+    username = await get_username_from_token(token)
     logging.info(f'Accepted client connection. username: {username}, token: {token}')
     guacamole_websocket_uri = f'ws://{config.guacamole_server_host}:{config.guacamole_server_port}\
         /websocket-tunnel?{str(client_socket.query_params)}'
@@ -102,7 +60,7 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
                                   extra_headers=client_socket.headers.raw, compression=None, max_queue=None) as server_socket:
 
         logging.info(
-            f'Successfully connected to webserver. token: {client_socket.query_params.get("token")}')
+            f'Successfully connected to webserver. username: {username}, token: {client_socket.query_params.get("token")}')
         try:
             async def handle_websocket_input():
                 while True:
@@ -182,3 +140,15 @@ async def get_modified_file_extension(input_message: str) -> str:
                     logging.warn(
                         f'Middleware API file extension endpoint returned an unknown status code: {response.status}. Sending original file extension')
                 return input_message
+
+async def get_username_from_token(token: str) -> str:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+                f'http://{config.guacamole_server_host}:{config.guacamole_server_port}/api/session/data/mysql-shared/self/permissions?token={token}') as response:
+            if response.status == 200:
+                response = await response.json()
+                username = list(response['userPermissions'].keys())[0]
+                return username
+            else:
+                logging.warn(f'Failed to get username. token: {token}')
+                return ''
