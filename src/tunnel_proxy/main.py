@@ -14,7 +14,7 @@ import aiohttp
 
 from config import EnvConfig
 from custom_loggers import ReverseRotatingFileHandler
-from guac_message import get_part, get_part_content, remove_datetime_from_modified_message, split_multimessage
+from guac_message import get_part, get_part_content, remove_datetime_from_modified_message
 
 config = EnvConfig()
 

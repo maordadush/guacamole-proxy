@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Tuple
 
 
 def get_part(message: str, index: int) -> Tuple[str, int]:
@@ -17,28 +17,6 @@ def get_part(message: str, index: int) -> Tuple[str, int]:
 
 def get_part_content(message: str, index: int) -> str:
     return get_part(message, index)[0]
-
-
-def split_multimessage(multimessage: str) -> List[str]:
-    """
-    HTTP Proxy someimtes receives mulitple messages merged into one body, separated by semicolons
-    `str.split(';')` is invalid here because the content might contain semicolon
-    """
-    messages = []
-    message_start_index = 0
-    i = 0
-    while i < len(multimessage):
-        if multimessage[i] == ';':
-            # Found end of message, add the message to the list
-            i += 1
-            messages.append(multimessage[message_start_index:i])
-            message_start_index = i
-        elif multimessage[i] == ',':
-            i += 1
-        else:
-            part_length = multimessage[i:].split('.')[0]
-            i += len(part_length) + 1 + int(part_length)
-    return messages
 
 def remove_datetime_from_modified_message(input_message: str) -> str:
     """
