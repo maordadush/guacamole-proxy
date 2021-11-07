@@ -31,6 +31,8 @@ async def health_check():
 
 @app.get('/proxy/api/files')
 async def proxy_download(request: Request):
+    token = request.query_params.get('token', '')
+    username = get_username_from_token(token)
     original_uri = request.headers['x-original-uri']
     original_filename = original_uri[original_uri.rfind('/') + 1:]
     zipped_filename = f'{original_filename}.zip'
@@ -58,11 +60,14 @@ async def proxy_download(request: Request):
             yield chunk
         
 
+
     return StreamingResponse(get_file_content_iterator(), media_type=octet_stream_media_type, headers={'Content-Disposition': f'attachment; filename="{zipped_filename}"'})
 
 
 @app.post('/proxy/api/files')
 async def proxy_upload(request: Request):
+    token = request.query_params.get('token', '')
+    username = get_username_from_token(token)
     original_uri = request.headers['x-original-uri']
     octet_stream_media_type = 'application/octet-stream'
     guacamole_upload_uri = f'http://{config.guacamole_server_host}:{config.guacamole_server_port}{original_uri}'
@@ -86,3 +91,13 @@ async def proxy_upload(request: Request):
         return Response(status_code=403)
 
     return Response(status_code=500)
+
+async def get_username_from_token(token: str) -> str:
+    response = requests.get(f'http://{config.guacamole_server_host}:{config.guacamole_server_port}/api/session/data/mysql-shared/self/permissions?token={token}')
+    if response.status == 200:
+        response = await response.json()
+        username = list(response['userPermissions'].keys())[0]
+        return username
+    else:
+        logging.warn(f'Failed to get username. token: {token}')
+        return ''
