@@ -26,6 +26,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get('/proxy/api/_health')
 async def health_check():
     return Response(status_code=200)
@@ -99,17 +100,23 @@ async def proxy_upload(request: Request):
                  f' status_code: {middleware_response.status_code}, token: {token}')
     guacamole_response = requests.post(
         guacamole_upload_uri, params=request.query_params, data=file_content)
-    return Response(guacamole_response.text, status_code=guacamole_response.status_code, media_type=octet_stream_media_type)
+    return Response(guacamole_response.text, headers=guacamole_response.headers, status_code=guacamole_response.status_code, media_type=octet_stream_media_type)
 
 # This function is duplicated in tunnel_proxy, should be refactored to use a common module
 
 
 async def get_username_from_token(token: str) -> str:
-    response = requests.get(
-        f'http://{config.guacamole_server_host}:{config.guacamole_server_port}/api/session/data/mysql-shared/self/permissions?token={token}')
-    if response.status_code == 200:
-        username = list(response.json()['userPermissions'].keys())[0]
-        return username
-    else:
-        logging.warn(f'Failed to get username. token: {token}')
+    try:
+        response = requests.get(
+            f'http://{config.guacamole_server_host}:{config.guacamole_server_port}/api/session/data/mysql-shared/self/permissions?token={token}')
+        if response.status_code == 200:
+            username = list(response.json()['userPermissions'].keys())[0]
+            return username
+        else:
+            logging.warn(
+                f'Failed to get username. token: {token}, error: {response.status_code}: {response.text}')
+            return ''
+    except Exception as e:
+        logging.warn(
+            f'Failed to get username. token: {token}, error: {str(e)}')
         return ''

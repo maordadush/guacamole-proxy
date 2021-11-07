@@ -48,12 +48,14 @@ app.add_middleware(
 async def health_check():
     return Response(status_code=200)
 
+
 @app.websocket('/proxy/tunnel/ws')
 async def ws_tunnel_proxy(client_socket: WebSocket):
     await client_socket.accept('guacamole')
     token = client_socket.query_params.get('token')
     username = await get_username_from_token(token)
-    logging.info(f'Accepted client connection. username: {username}, token: {token}')
+    logging.info(
+        f'Accepted client connection. username: {username}, token: {token}')
     guacamole_websocket_uri = f'ws://{config.guacamole_server_host}:{config.guacamole_server_port}\
         /websocket-tunnel?{str(client_socket.query_params)}'
     async with websockets.connect(guacamole_websocket_uri, subprotocols=['guacamole'], max_size=None,
@@ -71,8 +73,10 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
                             input_message, server_socket))
                     else:
                         if message_type == 'mouse' or message_type == 'key':
-                            asyncio.create_task(log_user_event(username, input_message))
-                            input_message = remove_datetime_from_modified_message(input_message)
+                            asyncio.create_task(
+                                log_user_event(username, input_message))
+                            input_message = remove_datetime_from_modified_message(
+                                input_message)
                         await server_socket.send(input_message)
 
             async def handle_websocket_output():
@@ -142,14 +146,21 @@ async def get_modified_file_extension(input_message: str) -> str:
                 return input_message
 
 # This function is duplicated in tunnel_proxy, should be refactored to use a common module
+
+
 async def get_username_from_token(token: str) -> str:
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
-                f'http://{config.guacamole_server_host}:{config.guacamole_server_port}/api/session/data/mysql-shared/self/permissions?token={token}') as response:
-            if response.status == 200:
-                response = await response.json()
-                username = list(response['userPermissions'].keys())[0]
-                return username
-            else:
-                logging.warn(f'Failed to get username. token: {token}')
-                return ''
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                    f'http://{config.guacamole_server_host}:{config.guacamole_server_port}'
+                    f'/api/session/data/mysql-shared/self/permissions?token={token}') as response:
+                if response.status == 200:
+                    response = await response.json()
+                    username = list(response['userPermissions'].keys())[0]
+                    return username
+                else:
+                    logging.warn(f'Failed to get username. token: {token}')
+                    return ''
+    except Exception as e:
+        logging.warn(f'Failed to get username. token: {token}, exception: {e}')
+        return ''
