@@ -141,6 +141,7 @@ async def get_modified_file_extension(input_message: str) -> str:
                         f'Middleware API file extension endpoint returned an unknown status code: {response.status}. Sending original file extension')
                 return input_message
 
+# This function is duplicated in tunnel_proxy, should be refactored to use a common module
 async def get_username_from_token(token: str) -> str:
     async with aiohttp.ClientSession() as session:
         async with session.get(
