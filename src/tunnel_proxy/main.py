@@ -1,12 +1,9 @@
 from pathlib import Path
 import logging
 from datetime import datetime
-import base64
 
-
-from fastapi import FastAPI, WebSocket, Request, Response
+from fastapi import FastAPI, WebSocket, Response
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import StreamingResponse
 from starlette.websockets import WebSocketDisconnect
 import websockets
 import asyncio
@@ -14,7 +11,9 @@ import aiohttp
 
 from config import EnvConfig
 from custom_loggers import ReverseRotatingFileHandler
-from guac_message import get_part, get_part_content, remove_datetime_from_modified_message
+from guac_message import get_part, get_part_content, remove_datetime_from_modified_message, \
+    GuacamoleClipboardHandler, MiddlewareClipboardError
+
 
 config = EnvConfig()
 
@@ -63,32 +62,30 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
 
         logging.info(
             f'Successfully connected to webserver. username: {username}, token: {client_socket.query_params.get("token")}')
-        clipboard_streams = {}
         try:
             async def handle_websocket_input():
-                while True:
-                    input_message = await client_socket.receive_text()
+                clipboard_handler = GuacamoleClipboardHandler(
+                    True, 8000, config.middleware_api_host, config.middleware_api_port, server_socket.send)
+                async for input_message in client_socket.iter_text():
+                    # input_message = await client_socket.receive_text()
                     message_type = get_part_content(input_message, 0)
                     if message_type == 'put':  # file upload
                         asyncio.create_task(handle_websocket_put(
                             input_message, server_socket))
                     elif message_type == 'blob':  # clipboard blob
-                        stream_index = int(get_part_content(input_message, 1))
-                        if stream_index in clipboard_streams:
-                            blob_content_in_base64 = get_part_content(
-                                input_message, 2)
-                            blob_content = base64.b64decode(
-                                blob_content_in_base64).decode('utf-8')
-                            clipboard_streams[stream_index] += blob_content
-                        else:
+                        if not clipboard_handler.try_add_blob(input_message):
                             await server_socket.send(input_message)
                     elif message_type == 'end':  # clipboard stream end
-                        stream_index = int(get_part_content(input_message, 1))
-                        if stream_index in clipboard_streams:
-                            blob_content = clipboard_streams[stream_index]
-                            del clipboard_streams[stream_index]
-                            asyncio.create_task(handle_clipboard(
-                                stream_index, blob_content, server_socket))
+                        if clipboard_handler.clipboard_exists(input_message):
+                            try:
+                                asyncio.create_task(
+                                    clipboard_handler.send_clipboard(input_message))
+                            except MiddlewareClipboardError as e:
+                                logging.warn(
+                                    f'Error while sending clipboard. Error: {e}')
+                            except websockets.exceptions.ConnectionClosed:
+                                # Websocket closed mid-transaction
+                                pass
                         else:
                             await server_socket.send(input_message)
                     else:
@@ -98,14 +95,43 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
                             input_message = remove_datetime_from_modified_message(
                                 input_message)
                         if message_type == 'clipboard':  # clipboard stream start
-                            stream_index = int(
-                                get_part_content(input_message, 1))
-                            clipboard_streams[stream_index] = ''
+                            clipboard_handler.create_clipboard(input_message)
                         await server_socket.send(input_message)
 
             async def handle_websocket_output():
+                clipboard_handler = GuacamoleClipboardHandler(
+                    False, 5000, config.middleware_api_host, config.middleware_api_port, client_socket.send_bytes)
                 async for output_message in server_socket:
-                    await client_socket.send_bytes(output_message)
+                    # messages sometime contain multiple messages
+                    messages = map(
+                        lambda m: f'{m};', output_message.split(';')[:-1])
+                    modified_messages = ''
+                    for message in messages:
+                        message_type = get_part_content(message, 0)
+                        if message_type == 'clipboard':
+                            modified_messages += message
+                            clipboard_handler.create_clipboard(message)
+                        elif message_type == 'blob':
+                            if not clipboard_handler.try_add_blob(message):
+                                modified_messages += message
+                        elif message_type == 'end':
+                            if clipboard_handler.clipboard_exists(message):
+                                try:
+                                    asyncio.create_task(
+                                        clipboard_handler.send_clipboard(message))
+                                except MiddlewareClipboardError as e:
+                                    logging.warn(
+                                        f'Error while sending clipboard. Error: {e}')
+                                except WebSocketDisconnect:
+                                    # Websocket closed mid-transaction
+                                    pass
+                            else:
+                                modified_messages += message
+                        else:
+                            modified_messages += message
+                    if modified_messages:
+                        # Avoid sending empty strings on the channel
+                        await client_socket.send_bytes(modified_messages)
 
             # Blocks while running asynchronously
             await asyncio.gather(handle_websocket_input(), handle_websocket_output())
@@ -187,29 +213,3 @@ async def get_username_from_token(token: str) -> str:
     except Exception as e:
         logging.warn(f'Failed to get username. token: {token}, exception: {e}')
         return ''
-
-
-async def handle_clipboard(stream_index: int, blob_content: bytes, websocket: WebSocket):
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
-                f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/clipboard', data=blob_content) as response:
-            if response.status == 200:
-                new_clipboard = await response.text()
-                base64_encoded_clipboard = base64.b64encode(
-                    new_clipboard.encode('utf-8')).decode('utf-8')
-                clipboard_blob_size = 8000
-                for i in range(0, len(base64_encoded_clipboard), clipboard_blob_size):
-                    clipboard_message_blob = base64_encoded_clipboard[i:i +
-                                                                      clipboard_blob_size]
-                    if websocket.open:
-                        blob_message = f'4.blob,{len(str(stream_index))}.{stream_index},{len(clipboard_message_blob)}.{clipboard_message_blob};'
-                        print(blob_message)
-                        await websocket.send(blob_message)
-                if websocket.open:
-                    end_message = f'3.end,{len(str(stream_index))}.{stream_index};'
-                    print(end_message)
-                    await websocket.send(end_message)
-
-            else:
-                logging.warn(
-                    f'Middleware API clipboard endpoint returned an unknown status code: {response.status}')
