@@ -63,20 +63,44 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
 
         logging.info(
             f'Successfully connected to webserver. username: {username}, token: {client_socket.query_params.get("token")}')
+        clipboard_streams = {}
         try:
             async def handle_websocket_input():
                 while True:
                     input_message = await client_socket.receive_text()
                     message_type = get_part_content(input_message, 0)
-                    if message_type == 'put':
+                    if message_type == 'put':  # file upload
                         asyncio.create_task(handle_websocket_put(
                             input_message, server_socket))
+                    elif message_type == 'blob':  # clipboard blob
+                        stream_index = int(get_part_content(input_message, 1))
+                        if stream_index in clipboard_streams:
+                            blob_content_in_base64 = get_part_content(
+                                input_message, 2)
+                            blob_content = base64.b64decode(
+                                blob_content_in_base64).decode('utf-8')
+                            clipboard_streams[stream_index] += blob_content
+                        else:
+                            await server_socket.send(input_message)
+                    elif message_type == 'end':  # clipboard stream end
+                        stream_index = int(get_part_content(input_message, 1))
+                        if stream_index in clipboard_streams:
+                            blob_content = clipboard_streams[stream_index]
+                            del clipboard_streams[stream_index]
+                            asyncio.create_task(handle_clipboard(
+                                stream_index, blob_content, server_socket))
+                        else:
+                            await server_socket.send(input_message)
                     else:
                         if message_type == 'mouse' or message_type == 'key':
                             asyncio.create_task(
                                 log_user_event(username, input_message))
                             input_message = remove_datetime_from_modified_message(
                                 input_message)
+                        if message_type == 'clipboard':  # clipboard stream start
+                            stream_index = int(
+                                get_part_content(input_message, 1))
+                            clipboard_streams[stream_index] = ''
                         await server_socket.send(input_message)
 
             async def handle_websocket_output():
@@ -145,10 +169,9 @@ async def get_modified_file_extension(input_message: str) -> str:
                         f'Middleware API file extension endpoint returned an unknown status code: {response.status}. Sending original file extension')
                 return input_message
 
-# This function is duplicated in tunnel_proxy, should be refactored to use a common module
-
 
 async def get_username_from_token(token: str) -> str:
+    # This function is duplicated in tunnel_proxy, should be refactored to use a common module
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
@@ -164,3 +187,29 @@ async def get_username_from_token(token: str) -> str:
     except Exception as e:
         logging.warn(f'Failed to get username. token: {token}, exception: {e}')
         return ''
+
+
+async def handle_clipboard(stream_index: int, blob_content: bytes, websocket: WebSocket):
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+                f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/clipboard', data=blob_content) as response:
+            if response.status == 200:
+                new_clipboard = await response.text()
+                base64_encoded_clipboard = base64.b64encode(
+                    new_clipboard.encode('utf-8')).decode('utf-8')
+                clipboard_blob_size = 8000
+                for i in range(0, len(base64_encoded_clipboard), clipboard_blob_size):
+                    clipboard_message_blob = base64_encoded_clipboard[i:i +
+                                                                      clipboard_blob_size]
+                    if websocket.open:
+                        blob_message = f'4.blob,{len(str(stream_index))}.{stream_index},{len(clipboard_message_blob)}.{clipboard_message_blob};'
+                        print(blob_message)
+                        await websocket.send(blob_message)
+                if websocket.open:
+                    end_message = f'3.end,{len(str(stream_index))}.{stream_index};'
+                    print(end_message)
+                    await websocket.send(end_message)
+
+            else:
+                logging.warn(
+                    f'Middleware API clipboard endpoint returned an unknown status code: {response.status}')

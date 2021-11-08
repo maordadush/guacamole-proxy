@@ -102,10 +102,8 @@ async def proxy_upload(request: Request):
         guacamole_upload_uri, params=request.query_params, data=file_content)
     return Response(guacamole_response.text, headers=guacamole_response.headers, status_code=guacamole_response.status_code, media_type=octet_stream_media_type)
 
-# This function is duplicated in tunnel_proxy, should be refactored to use a common module
-
-
 async def get_username_from_token(token: str) -> str:
+    # This function is duplicated in tunnel_proxy, should be refactored to use a common module
     try:
         response = requests.get(
             f'http://{config.guacamole_server_host}:{config.guacamole_server_port}/api/session/data/mysql-shared/self/permissions?token={token}')
