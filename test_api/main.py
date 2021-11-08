@@ -41,9 +41,16 @@ async def modify_file_extension(request: Request):
         return Response('jpeg'.encode(), status_code=200)
     return Response(status_code=204)
 
-@app.post('/validations/clipboard')
-async def modify_clipboard(request: Request):
+@app.post('/validations/input_clipboard')
+async def modify_input_clipboard(request: Request):
     clipboard = (await request.body()).decode('utf-8')
     if clipboard == '123':
         return Response('321', status_code=200)
+    return Response(clipboard, status_code=200)
+
+@app.post('/validations/output_clipboard')
+async def modify_output_clipboard(request: Request):
+    clipboard = (await request.body()).decode('utf-8')
+    if clipboard == 'aaa':
+        return Response('bbb', status_code=200)
     return Response(clipboard, status_code=200)
