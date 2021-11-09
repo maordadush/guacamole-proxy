@@ -1,0 +1,13 @@
+version: "3"
+services:
+  haproxy:
+    image: haproxy
+    container_name: haproxy
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - /home/azureuser/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    build:
+      context: .
+      dockerfile: haproxy.Dockerfile

@@ -1,0 +1,1 @@
+haproxy.cfg needs to have 644 permissions so the haproxy container can read it
