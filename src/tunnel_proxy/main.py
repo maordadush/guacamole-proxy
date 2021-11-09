@@ -52,11 +52,11 @@ async def health_check():
 async def ws_tunnel_proxy(client_socket: WebSocket):
     await client_socket.accept('guacamole')
     token = client_socket.query_params.get('token')
-    username = await get_username_from_token(token)
+    guacamole_host = client_socket.headers["X-Guacamole-host"]
+    username = await get_username_from_token(token, guacamole_host)
     logging.info(
         f'Accepted client connection. username: {username}, token: {token}')
-    guacamole_websocket_uri = f'ws://{config.guacamole_server_host}:{config.guacamole_server_port}\
-        /websocket-tunnel?{str(client_socket.query_params)}'
+    guacamole_websocket_uri = f'ws://{guacamole_host}/{client_socket.headers["X-Original-URI"]}'
     async with websockets.connect(guacamole_websocket_uri, subprotocols=['guacamole'], max_size=None,
                                   extra_headers=client_socket.headers.raw, compression=None, max_queue=None) as server_socket:
 
@@ -196,12 +196,12 @@ async def get_modified_file_extension(input_message: str) -> str:
                 return input_message
 
 
-async def get_username_from_token(token: str) -> str:
+async def get_username_from_token(token: str, guacamole_host: str) -> str:
     # This function is duplicated in tunnel_proxy, should be refactored to use a common module
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                    f'http://{config.guacamole_server_host}:{config.guacamole_server_port}'
+                    f'http://{guacamole_host}'
                     f'/api/session/data/mysql-shared/self/permissions?token={token}') as response:
                 if response.status == 200:
                     response = await response.json()

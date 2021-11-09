@@ -35,7 +35,8 @@ async def health_check():
 @app.get('/proxy/api/files')
 async def proxy_download(request: Request):
     token = request.query_params.get('token', '')
-    username = await get_username_from_token(token)
+    guacamole_host = request.headers['x-guacamole-host']
+    username = await get_username_from_token(token, guacamole_host)
     original_uri = request.headers['x-original-uri']
     original_filename = original_uri[original_uri.rfind('/') + 1:]
     zipped_filename = f'{original_filename}.zip'
@@ -49,7 +50,7 @@ async def proxy_download(request: Request):
         yield zip_header
 
         guacamole_request = {
-            'url': f'http://{config.guacamole_server_host}:{config.guacamole_server_port}{original_uri}',
+            'url': f'http://{guacamole_host}{original_uri}',
             'params': request.query_params._dict
         }
         middleware_response = requests.post(f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/download',
@@ -74,12 +75,13 @@ async def proxy_download(request: Request):
 @app.post('/proxy/api/files')
 async def proxy_upload(request: Request):
     token = request.query_params.get('token', '')
-    username = await get_username_from_token(token)
+    guacamole_host = request.headers['x-guacamole-host']
+    username = await get_username_from_token(token, guacamole_host)
     original_uri = request.headers['x-original-uri']
     filename = original_uri[original_uri.rfind('/') + 1:]
     octet_stream_media_type = 'application/octet-stream'
     url_encoded_original_uri = quote(original_uri, safe='/')
-    guacamole_upload_uri = f'http://{config.guacamole_server_host}:{config.guacamole_server_port}{url_encoded_original_uri}'
+    guacamole_upload_uri = f'http://{guacamole_host}{url_encoded_original_uri}'
 
     logging.debug(
         f'Received upload file request. Username: {username}, filename: {filename}, token: {token}')
@@ -102,11 +104,11 @@ async def proxy_upload(request: Request):
         guacamole_upload_uri, params=request.query_params, data=file_content)
     return Response(guacamole_response.text, headers=guacamole_response.headers, status_code=guacamole_response.status_code, media_type=octet_stream_media_type)
 
-async def get_username_from_token(token: str) -> str:
+async def get_username_from_token(token: str, guacamole_host: str) -> str:
     # This function is duplicated in tunnel_proxy, should be refactored to use a common module
     try:
         response = requests.get(
-            f'http://{config.guacamole_server_host}:{config.guacamole_server_port}/api/session/data/mysql-shared/self/permissions?token={token}')
+            f'http://{guacamole_host}/api/session/data/mysql-shared/self/permissions?token={token}')
         if response.status_code == 200:
             username = list(response.json()['userPermissions'].keys())[0]
             return username
