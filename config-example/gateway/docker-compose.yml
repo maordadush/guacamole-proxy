@@ -8,6 +8,5 @@ services:
       - 80:80
     volumes:
       - /home/azureuser/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
-    build:
-      context: .
-      dockerfile: haproxy.Dockerfile
+      - /home/azureuser/cert.pem:/usr/local/etc/haproxy/cert.pem
+      - /home/azureuser/key.pem:/usr/local/etc/haproxy/cert.pem.key
