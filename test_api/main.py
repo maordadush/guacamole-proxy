@@ -20,8 +20,17 @@ app.add_middleware(
 
 @app.post('/validations/upload')
 async def verify_upload(request: Request):
-    await asyncio.sleep(10)
-    return Response(status_code=204)
+    try:
+        content = (await request.body()).decode('utf-8')
+        if content.startswith('CHANGE_ME'):
+            return Response(status_code=200, content='CHANGED')
+        else:
+            await asyncio.sleep(5)
+            return Response(status_code=204)
+    except:
+        await asyncio.sleep(5)
+        return Response(status_code=204)
+
 
 @app.post('/validations/download')
 async def verify_download(request: Request):
@@ -29,28 +38,41 @@ async def verify_download(request: Request):
     url = body['url']
     params = body['params']
     response = requests.get(url, params=params, stream=True)
-    await asyncio.sleep(10)  # Validating file
-    return StreamingResponse(response.iter_content(1024*1024))
+    def generate():
+        first_chunk = True
+        for chunk in response.iter_content(chunk_size=1024 * 1024):
+            if chunk:
+                try:
+                    if first_chunk and chunk.decode('utf-8').startswith('CHANGE_ME'):
+                        yield 'CHANGED'
+                    else:
+                        yield chunk
+                    first_chunk = False
+                except StopIteration as e:
+                    raise e
+                except Exception:
+                    yield chunk
+    return StreamingResponse(generate(), media_type='application/octet-stream')
 
 @app.post('/validations/file_extension')
 async def modify_file_extension(request: Request):
     file_extesion = (await request.body()).decode('utf-8')
     if file_extesion == 'docx':
         return Response('pdf'.encode(), status_code=200)
-    if file_extesion == 'jpg':
-        return Response('jpeg'.encode(), status_code=200)
     return Response(status_code=204)
 
 @app.post('/validations/input_clipboard')
 async def modify_input_clipboard(request: Request):
     clipboard = (await request.body()).decode('utf-8')
-    if clipboard == '123':
-        return Response('321', status_code=200)
+    if 'virus' in clipboard:
+        return Response('', status_code=200)
+    clipboard = clipboard.replace('123', '321')
     return Response(clipboard, status_code=200)
 
 @app.post('/validations/output_clipboard')
 async def modify_output_clipboard(request: Request):
     clipboard = (await request.body()).decode('utf-8')
-    if clipboard == 'aaa':
-        return Response('bbb', status_code=200)
+    if 'virus' in clipboard:
+        return Response('', status_code=200)
+    clipboard = clipboard.replace('abc', 'cba')
     return Response(clipboard, status_code=200)
