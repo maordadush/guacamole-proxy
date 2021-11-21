@@ -43,11 +43,6 @@ app.add_middleware(
 )
 
 
-@app.get('/proxy/tunnel/_health')
-async def health_check():
-    return Response(status_code=200)
-
-
 @app.websocket('/proxy/tunnel/ws')
 async def ws_tunnel_proxy(client_socket: WebSocket):
     await client_socket.accept('guacamole')

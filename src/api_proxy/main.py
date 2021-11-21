@@ -27,11 +27,6 @@ app.add_middleware(
 )
 
 
-@app.get('/proxy/api/_health')
-async def health_check():
-    return Response(status_code=200)
-
-
 @app.get('/proxy/api/files')
 async def proxy_download(request: Request):
     token = request.query_params.get('token', '')
