@@ -9,6 +9,10 @@ LOG_LEVEL = 'LOG_LEVEL'
 USER_EVENTS_LOG_PATH = 'USER_EVENTS_LOG_PATH'
 USER_EVENTS_LOG_SIZE = 'USER_EVENTS_LOG_SIZE'
 USER_EVENTS_LOG_BACKUP = 'USER_EVENTS_LOG_BACKUP'
+USER_EVENTS_LOG_FORMAT = 'USER_EVENTS_LOG_FORMAT'
+MESSAGE_LOAD_MAXIMUM_AMOUNT = 'MESSAGE_LOAD_MAXIMUM_AMOUNT'
+MESSAGE_LOAD_INTERVAL_IN_SECONDS = 'MESSAGE_LOAD_INTERVAL_IN_SECONDS'
+MESSAGE_LOAD_EXCEED_THRESHOLD = 'MESSAGE_LOAD_EXCEED_THRESHOLD'
 
 @dataclass
 class Config:
@@ -18,6 +22,9 @@ class Config:
     user_events_log_path: str
     user_events_log_size: int
     user_events_log_backup: int
+    message_load_maximum_amount: int
+    message_load_interval_in_seconds: int
+    message_load_exceed_threshold: int
 
 
 class EnvConfig(Config):
@@ -28,10 +35,16 @@ class EnvConfig(Config):
         user_events_log_path = getenv(USER_EVENTS_LOG_PATH, 'user-events')
         user_events_log_size = int(getenv(USER_EVENTS_LOG_SIZE, str(1024 * 50)))
         user_events_log_backup = int(getenv(USER_EVENTS_LOG_BACKUP, '20'))
+        message_load_maximum_amount = int(getenv(MESSAGE_LOAD_MAXIMUM_AMOUNT, '800'))
+        message_load_interval_in_seconds = int(getenv(MESSAGE_LOAD_INTERVAL_IN_SECONDS, '10'))
+        message_load_exceed_threshold = int(getenv(MESSAGE_LOAD_EXCEED_THRESHOLD, '3'))
         return super().__init__(log_level=log_level,
             middleware_api_host=middleware_api_host,
             middleware_api_port=middleware_api_port,
             user_events_log_path=user_events_log_path,
             user_events_log_size=user_events_log_size,
-            user_events_log_backup=user_events_log_backup
+            user_events_log_backup=user_events_log_backup,
+            message_load_maximum_amount=message_load_maximum_amount,
+            message_load_interval_in_seconds=message_load_interval_in_seconds,
+            message_load_exceed_threshold=message_load_exceed_threshold
         )
