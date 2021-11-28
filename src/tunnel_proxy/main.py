@@ -29,6 +29,7 @@ reverse_rotating_handler.setFormatter(message_only_formatter)
 user_events_logger = logging.getLogger('user-events')
 user_events_logger.addHandler(reverse_rotating_handler)
 user_events_logger.propagate = False
+user_events_log_buffer = []
 
 app = FastAPI()
 
@@ -165,21 +166,25 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
 
 async def log_user_event(username: str, input_message: str):
     event_type = get_part_content(input_message, 0)
+    log_message = None
     if event_type == 'key':
         keycode = int(get_part_content(input_message, 1))
         pressed = int(get_part_content(input_message, 2)) == 1
         timestamp = datetime.fromtimestamp(
             int(get_part_content(input_message, 3)) / 1000)
-        user_events_logger.info(
-            f'{username},{event_type},{timestamp},{keycode},{pressed}')
+        log_message = f'{username},{event_type},{timestamp},{keycode},{pressed}'
     elif event_type == 'mouse':
         x = int(get_part_content(input_message, 1))
         y = int(get_part_content(input_message, 2))
         pressed = int(get_part_content(input_message, 3)) == 1
         timestamp = datetime.fromtimestamp(
             int(get_part_content(input_message, 4)) / 1000)
-        user_events_logger.info(
-            f'{username},{event_type},{timestamp},{x},{y},{pressed}')
+        log_message = f'{username},{event_type},{timestamp},{x},{y},{pressed}'
+    user_events_log_buffer.append(log_message)
+    if len(user_events_log_buffer) > config.user_events_log_buffer_size:
+        combined_log_message = '\n'.join(user_events_log_buffer)
+        user_events_logger.info(combined_log_message)
+        user_events_log_buffer.clear()
 
 
 async def handle_websocket_put(input_message: str, websocket: WebSocket):
