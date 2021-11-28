@@ -96,6 +96,9 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
             async def handle_websocket_output():
                 clipboard_handler = GuacamoleClipboardHandler(
                     False, 5000, config.middleware_api_host, config.middleware_api_port, client_socket.send_bytes)
+                message_sent_date_marker = datetime.now()
+                messages_sent_in_interval = 0
+                message_load_consecutive_exceeding_counter = 0
                 async for output_message in server_socket:
                     # messages sometime contain multiple messages
                     messages = map(
@@ -124,8 +127,27 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
                                 modified_messages += message
                         else:
                             modified_messages += message
+
+                    # Avoid sending empty strings on the channel
                     if modified_messages:
-                        # Avoid sending empty strings on the channel
+                        messages_sent_in_interval += 1
+                        # Check if a channel transfers too much data, if so, disconnect client
+                        if messages_sent_in_interval > config.message_load_maximum_amount:
+                            seconds_since_counter_started = (datetime.now() - message_sent_date_marker).total_seconds()
+                            if seconds_since_counter_started <= config.message_load_interval_in_seconds:
+                                message_load_consecutive_exceeding_counter += 1
+                                allowed_exceeding = f'{message_load_consecutive_exceeding_counter}/{config.message_load_exceed_threshold}'
+                                logging.warn(
+                                    f'Message load exceeded ({allowed_exceeding} times). username: {username}, token: {token}')
+                                if message_load_consecutive_exceeding_counter >= config.message_load_exceed_threshold:
+                                    logging.warn(
+                                        f'Message load exceeded {message_load_consecutive_exceeding_counter} times, disconnecting session. username: {username}, token: {token}')
+                                    await server_socket.close()
+                            else:
+                                message_load_consecutive_exceeding_counter = 0
+                            messages_sent_in_interval = 0
+                            message_sent_date_marker = datetime.now()
+
                         await client_socket.send_bytes(modified_messages)
 
             # Blocks while running asynchronously
