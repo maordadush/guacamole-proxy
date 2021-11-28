@@ -2,7 +2,7 @@ from pathlib import Path
 import logging
 from datetime import datetime
 
-from fastapi import FastAPI, WebSocket, Response
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketDisconnect
 import websockets
@@ -17,7 +17,7 @@ from guac_message import get_part, get_part_content, remove_datetime_from_modifi
 
 config = EnvConfig()
 
-logging.basicConfig(level=config.log_level)
+logging.basicConfig(level=config.log_level, format='%(asctime)s %(levelname)s %(message)s')
 
 # User events logging
 
