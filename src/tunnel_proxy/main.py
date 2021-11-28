@@ -77,7 +77,7 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
                                     clipboard_handler.send_clipboard(input_message))
                             except MiddlewareClipboardError as e:
                                 logging.warn(
-                                    f'Error while sending clipboard. Error: {e}')
+                                    f'Error sending clipboard to server. Error: {e}')
                             except websockets.exceptions.ConnectionClosed:
                                 # Websocket closed mid-transaction
                                 pass
@@ -116,7 +116,7 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
                                         clipboard_handler.send_clipboard(message))
                                 except MiddlewareClipboardError as e:
                                     logging.warn(
-                                        f'Error while sending clipboard. Error: {e}')
+                                        f'Error sending clipboard to client. Error: {e}')
                                 except WebSocketDisconnect:
                                     # Websocket closed mid-transaction
                                     pass
