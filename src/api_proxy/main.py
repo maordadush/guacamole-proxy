@@ -1,14 +1,15 @@
-import json
 import logging
 from urllib.parse import quote
 
 import requests
+import aiohttp
 from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import StreamingResponse
 
 from config import EnvConfig
 from zip import ZipFile, ZIP_DEFLATED
+from multipart import get_multipart_body_generator, generate_boundary, get_multipart_body_async_generator
 
 config = EnvConfig()
 
@@ -38,18 +39,25 @@ async def proxy_download(request: Request):
     octet_stream_media_type = 'application/octet-stream'
 
     def get_file_content_iterator():
+        filename_modification_response = requests.get(
+            f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/download/filename?filename={original_filename}')
+        if filename_modification_response.status_code != 200:
+            raise StopIteration(
+                f'Filename modification request failed. status_code: {filename_modification_response.status_code}, text: {filename_modification_response.text}')
+        modified_filename = filename_modification_response.text
         # Wrapping file content in a zip in order to return any valid data ASAP (zip file header)
         zip_stream = ZipFile(mode='w')
         zip_header, zip_info = zip_stream.write_header(
-            original_filename, compress_type=ZIP_DEFLATED)
+            modified_filename, compress_type=ZIP_DEFLATED)
         yield zip_header
 
-        guacamole_request = {
-            'url': f'http://{guacamole_host}{original_uri}',
-            'params': request.query_params._dict
-        }
+        guacamole_response = requests.get(
+            f'http://{guacamole_host}{original_uri}', params=request.query_params, stream=True)
+        boundary = generate_boundary()
+        middleware_request_body_generator = get_multipart_body_generator(
+            guacamole_response.iter_content(chunk_size=1024 * 1024), boundary, original_filename)
         middleware_response = requests.post(f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/download',
-                                            data=json.dumps(guacamole_request), stream=True)
+                                            data=middleware_request_body_generator, stream=True, headers={'Content-Type': f'multipart/form-data; boundary={boundary}'})
 
         if middleware_response.status_code == 200:
             logging.info(
@@ -80,24 +88,33 @@ async def proxy_upload(request: Request):
 
     logging.debug(
         f'Received upload file request. Username: {username}, filename: {filename}, token: {token}')
-    original_file_content = await request.body()
-    middleware_response = requests.post(
-        f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/upload', data=original_file_content, stream=True)
 
-    if middleware_response.status_code == 200:
-        file_content = middleware_response.iter_content(1024*1024)
-    elif middleware_response.status_code == 204:
-        file_content = original_file_content
+    middleware_response_iterator = None
+    session = aiohttp.ClientSession()
+    boundary = generate_boundary()
+    async_multipart_body_generator = get_multipart_body_async_generator(
+        request.stream(), boundary, filename)
+
+    middleware_response = await session.post(f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/upload',
+                                             data=async_multipart_body_generator, headers={'Content-Type': f'multipart/form-data; boundary={boundary}'})
+    middleware_response_iterator = middleware_response.content.iter_any()
+
+    if middleware_response.status == 200:
+        logging.info(f'Upload file successful middleware validation. Username: {username}, filename: {filename},'
+                     f' status_code: {middleware_response.status}, token: {token}')
+        guacamole_response = await session.post(guacamole_upload_uri, data=middleware_response_iterator, params=request.query_params,
+                                                headers={'Content-Type': octet_stream_media_type})
+        response = Response(await guacamole_response.text(), headers=guacamole_response.headers,
+                            status_code=guacamole_response.status, media_type=octet_stream_media_type)
+        guacamole_response.close()
     else:
         logging.warn(
             f'Upload file middleware validation failed. Username: {username}, filename: {filename}, token: {token}')
-        return Response(status_code=middleware_response.status_code)
+        response = Response(status_code=middleware_response.status)
+    middleware_response.close()
+    session.close()
+    return response
 
-    logging.info(f'Upload file successful middleware validation. Username: {username}, filename: {filename},'
-                 f' status_code: {middleware_response.status_code}, token: {token}')
-    guacamole_response = requests.post(
-        guacamole_upload_uri, params=request.query_params, data=file_content)
-    return Response(guacamole_response.text, headers=guacamole_response.headers, status_code=guacamole_response.status_code, media_type=octet_stream_media_type)
 
 async def get_username_from_token(token: str, guacamole_host: str) -> str:
     # This function is duplicated in tunnel_proxy, should be refactored to use a common module
