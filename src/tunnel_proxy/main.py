@@ -193,28 +193,25 @@ def flush_user_events_logs_buffer():
     user_events_log_buffer.clear()
 
 async def handle_websocket_put(input_message: str, websocket: WebSocket):
-    input_message = await get_modified_file_extension(input_message)
+    input_message = await get_modified_filename(input_message)
     if websocket.open:
         await websocket.send(input_message)
 
 
-async def get_modified_file_extension(input_message: str) -> str:
+async def get_modified_filename(input_message: str) -> str:
     filepath, filepart_index = get_part(input_message, 4)
-    filepath_extension_index = filepath.rfind('.')
-    if filepath_extension_index == -1:
-        # file has no extension, no point in modifying it
-        return input_message
+    filename_index = filepath.rfind('/')
 
-    file_extension = filepath[filepath_extension_index + 1:]
+    filename = filepath[filename_index + 1:]
     async with aiohttp.ClientSession() as session:
-        async with session.post(
-                f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/file_extension', data=file_extension) as response:
+        async with session.get(
+                f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/upload/filename?filename={filename}') as response:
             if response.status == 200:
-                new_file_extension = await response.text()
-                filepath_without_extension = filepath[:filepath_extension_index]
-                filepath_with_new_extension = f'{filepath_without_extension}.{new_file_extension}'
+                new_filename = await response.text()
+                filepath_without_filename = filepath[:filename_index + 1]
+                filepath_with_new_filename = f'{filepath_without_filename}{new_filename}'
                 input_message_without_file_part = input_message[:filepart_index]
-                new_input_message = f'{input_message_without_file_part}{str(len(filepath_with_new_extension))}.{filepath_with_new_extension};'
+                new_input_message = f'{input_message_without_file_part}{str(len(filepath_with_new_filename))}.{filepath_with_new_filename};'
                 return new_input_message
             else:
                 if response.status != 204:
