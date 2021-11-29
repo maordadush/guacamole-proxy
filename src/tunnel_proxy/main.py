@@ -162,6 +162,8 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
             logging.info(
                 f'Client conneection closed, terminating connection with webserver socket. username: {username}, token: {token}')
             await server_socket.close()
+        finally:
+            flush_user_events_logs_buffer()
 
 
 async def log_user_event(username: str, input_message: str):
@@ -182,10 +184,13 @@ async def log_user_event(username: str, input_message: str):
         log_message = f'{username},{event_type},{timestamp},{x},{y},{pressed}'
     user_events_log_buffer.append(log_message)
     if len(user_events_log_buffer) > config.user_events_log_buffer_size:
-        combined_log_message = '\n'.join(user_events_log_buffer)
-        user_events_logger.info(combined_log_message)
-        user_events_log_buffer.clear()
+        flush_user_events_logs_buffer()
 
+
+def flush_user_events_logs_buffer():
+    combined_log_message = '\n'.join(user_events_log_buffer)
+    user_events_logger.info(combined_log_message)
+    user_events_log_buffer.clear()
 
 async def handle_websocket_put(input_message: str, websocket: WebSocket):
     input_message = await get_modified_file_extension(input_message)
