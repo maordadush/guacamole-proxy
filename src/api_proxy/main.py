@@ -114,7 +114,7 @@ async def proxy_upload(request: Request):
         guacamole_response.close()
     else:
         logging.warn(
-            f'Upload file middleware validation failed. Username: {username}, filename: {filename}, token: {token}')
+            f'Upload file middleware validation failed. Username: {username}, filename: {filename}, token: {token}, status_code: {middleware_response.status}')
         response = Response(status_code=middleware_response.status)
     middleware_response.close()
     await session.close()
