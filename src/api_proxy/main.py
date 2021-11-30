@@ -42,8 +42,9 @@ async def proxy_download(request: Request):
         filename_modification_response = requests.get(
             f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/download/filename?filename={original_filename}')
         if filename_modification_response.status_code != 200:
-            raise StopIteration(
+            logging.error(
                 f'Filename modification request failed. status_code: {filename_modification_response.status_code}, text: {filename_modification_response.text}')
+            raise StopIteration()
         modified_filename = filename_modification_response.text
         # Wrapping file content in a zip in order to return any valid data ASAP (zip file header)
         zip_stream = ZipFile(mode='w')
