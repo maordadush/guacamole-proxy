@@ -56,8 +56,11 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
     async with websockets.connect(guacamole_websocket_uri, subprotocols=['guacamole'], max_size=None,
                                   extra_headers=client_socket.headers.raw, compression=None, max_queue=None) as server_socket:
 
+        # Get tunnel id sent in the first output message
         tunnel_id_message = await server_socket.recv()
         tunnel_id = get_part_content(tunnel_id_message, 1)
+        await client_socket.send_bytes(tunnel_id_message)
+
         logging.info(
             f'Successfully connected to webserver. username: {username}, token: {token}, tunnel_id: {tunnel_id}')
         async def handle_websocket_input():
