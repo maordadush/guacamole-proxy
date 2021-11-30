@@ -112,7 +112,7 @@ async def proxy_upload(request: Request):
             f'Upload file middleware validation failed. Username: {username}, filename: {filename}, token: {token}')
         response = Response(status_code=middleware_response.status)
     middleware_response.close()
-    session.close()
+    await session.close()
     return response
 
 
