@@ -106,7 +106,10 @@ async def proxy_upload(request: Request):
                      f' status_code: {middleware_response.status}, token: {token}')
         guacamole_response = await session.post(guacamole_upload_uri, data=middleware_response_iterator, params=request.query_params,
                                                 headers={'Content-Type': octet_stream_media_type})
-        response = Response(await guacamole_response.text(), headers=guacamole_response.headers,
+        guacamole_response_text = await guacamole_response.text()
+        if guacamole_response.status != 200:
+            logging.warn(f'Upload file to guacamole failed. Guacamole response: {guacamole_response_text}, Username: {username}, filename: {filename}, status_code: {guacamole_response.status}, token: {token}')
+        response = Response(guacamole_response_text, headers=guacamole_response.headers,
                             status_code=guacamole_response.status, media_type=octet_stream_media_type)
         guacamole_response.close()
     else:
