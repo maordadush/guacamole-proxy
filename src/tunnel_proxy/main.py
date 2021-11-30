@@ -214,9 +214,6 @@ async def get_modified_filename(input_message: str) -> str:
                 new_input_message = f'{input_message_without_file_part}{str(len(filepath_with_new_filename))}.{filepath_with_new_filename};'
                 return new_input_message
             else:
-                if response.status != 204:
-                    logging.warn(
-                        f'Middleware API file extension endpoint returned an unknown status code: {response.status}. Sending original file extension')
                 return input_message
 
 
