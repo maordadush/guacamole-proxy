@@ -40,7 +40,8 @@ async def proxy_download(request: Request):
 
     def get_file_content_iterator():
         filename_modification_response = requests.get(
-            f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/download/filename?filename={original_filename}')
+            f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/download/filename?filename={original_filename}',
+            timeout=1.5)
         if filename_modification_response.status_code != 200:
             logging.error(
                 f'Filename modification request failed. status_code: {filename_modification_response.status_code}, text: {filename_modification_response.text}')
