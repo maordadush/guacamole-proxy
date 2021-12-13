@@ -18,6 +18,7 @@ spec:
         volumeMounts:
           - name: nginx-conf-vol
             mountPath: /etc/nginx/nginx.conf
+            subPath: nginx.conf
         name: {{ .Values.nginx.selector.name }}
         ports:
         - containerPort: {{ .Values.nginx.port.number }}
