@@ -2,8 +2,8 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Values.nginx.selector.name }}
-nginx.conf:
-  nginx.conf: >
+data:
+  nginx.conf: |
     worker_processes 8;
 
     events {
