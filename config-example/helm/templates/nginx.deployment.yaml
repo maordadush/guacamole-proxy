@@ -39,11 +39,11 @@ spec:
           - name: GUACD_HOSTNAME
             value: {{ .Values.guacamole.env.GUACD_HOSTNAME }}
           - name: GUACD_PORT
-            value: {{ .Values.guacamole.env.GUACD_PORT }}
+            value: {{ !!str .Values.guacamole.env.GUACD_PORT }}
           - name: MYSQL_HOSTNAME
             value: {{ .Values.guacamole.env.MYSQL_HOSTNAME }}
           - name: MYSQL_PORT
-            value: {{ .Values.guacamole.env.MYSQL_PORT }}
+            value: {{ !!str .Values.guacamole.env.MYSQL_PORT }}
           - name: MYSQL_DATABASE
             value: {{ .Values.guacamole.env.MYSQL_DATABASE }}
           - name: MYSQL_USER
