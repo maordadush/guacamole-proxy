@@ -16,7 +16,7 @@ spec:
       - image: {{ .Values.nginx.image }}
         imagePullPolicy: Always
         volumeMounts:
-          - name: nginx.conf-vol
+          - name: nginx-conf-vol
             mountPath: /etc/nginx/nginx.conf
         name: {{ .Values.nginx.selector.name }}
         ports:
@@ -41,7 +41,7 @@ spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       volumes:
-        - name: nginx.conf-vol
+        - name: nginx-conf-vol
           configMap:
             name: nginx.conf
             items:
