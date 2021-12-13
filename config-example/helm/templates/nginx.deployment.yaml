@@ -37,19 +37,19 @@ spec:
         terminationMessagePolicy: File
         env:
           - name: GUACD_HOSTNAME
-            value: {{ .Values.guacamole.env.GUACD_HOSTNAME }}
+            value: {{ .Values.guacamole.env.GUACD_HOSTNAME | quote }}
           - name: GUACD_PORT
-            value: {{ !!str .Values.guacamole.env.GUACD_PORT }}
+            value: {{ .Values.guacamole.env.GUACD_PORT | quote }}
           - name: MYSQL_HOSTNAME
-            value: {{ .Values.guacamole.env.MYSQL_HOSTNAME }}
+            value: {{ .Values.guacamole.env.MYSQL_HOSTNAME | quote }}
           - name: MYSQL_PORT
-            value: {{ !!str .Values.guacamole.env.MYSQL_PORT }}
+            value: {{ .Values.guacamole.env.MYSQL_PORT | quote }}
           - name: MYSQL_DATABASE
-            value: {{ .Values.guacamole.env.MYSQL_DATABASE }}
+            value: {{ .Values.guacamole.env.MYSQL_DATABASE | quote }}
           - name: MYSQL_USER
-            value: {{ .Values.guacamole.env.MYSQL_USER }}
+            value: {{ .Values.guacamole.env.MYSQL_USER | quote }}
           - name: MYSQL_PASSWORD
-            value: {{ .Values.guacamole.env.MYSQL_PASSWORD }}
+            value: {{ .Values.guacamole.env.MYSQL_PASSWORD | quote }}
       nodeSelector:
         {{ toYaml .Values.nginx.nodeSelector }}
       dnsPolicy: ClusterFirst

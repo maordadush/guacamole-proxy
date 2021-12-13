@@ -16,15 +16,15 @@ spec:
       - image: {{ .Values.proxyapi.image }}
         env:
           - name: MIDDLEWARE_API_HOST
-            value: {{ !!str .Values.proxyapi.env.MIDDLEWARE_API_HOST }}
+            value: {{ .Values.proxyapi.env.MIDDLEWARE_API_HOST | quote }}
           - name: MIDDLEWARE_API_PORT
-            value: {{ .Values.proxyapi.env.MIDDLEWARE_API_PORT }}
+            value: {{ .Values.proxyapi.env.MIDDLEWARE_API_PORT | quote }}
           - name: WORKERS_PER_CORE
-            value: {{ !!str .Values.proxyapi.env.WORKERS_PER_CORE }}
+            value: {{ .Values.proxyapi.env.WORKERS_PER_CORE | quote }}
           - name: TIMEOUT
-            value: {{ !!str .Values.proxyapi.env.TIMEOUT }}
+            value: {{ .Values.proxyapi.env.TIMEOUT | quote }}
           - name: GRACEFUL_TIMEOUT
-            value: {{ !!str .Values.proxyapi.env.GRACEFUL_TIMEOUT }}
+            value: {{ .Values.proxyapi.env.GRACEFUL_TIMEOUT | quote }}
         imagePullPolicy: Always
         name: {{ .Values.proxyapi.selector.name }}
         ports:
