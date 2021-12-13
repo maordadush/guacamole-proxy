@@ -8,3 +8,64 @@ guacd:
   nodeSelector:
     type: compute
   image: 10.0.0.51:5000/guacamole/guacd:1.3.0
+
+proxyapi:
+  hostname: proxy-api
+  port:
+    name: proxy-api-clusterip
+    number: 80
+  selector:
+    name: proxy-api
+  nodeSelector:
+    type: compute
+  image: 10.0.0.51:5000/guacamole/proxy-api:1.0.0
+  env:
+    - name: MIDDLEWARE_API_PORT
+      value: nginx
+    - name: MIDDLEWARE_API_PORT
+      value: 80
+    - name: WORKERS_PER_CORE
+      value: 8
+    - name: TIMEOUT
+      value: 9999999
+    - name: GRACEFUL_TIMEOUT
+      value: 9999999
+    
+
+proxytunnel:
+  hostname: proxy-tunnel
+  port:
+    name: proxy-tunnel-clusterip
+    number: 80
+  selector:
+    name: proxy-tunnel
+  nodeSelector:
+    type: compute
+  image: 10.0.0.51:5000/guacamole/proxy-tunnel:1.0.0
+  env:
+    - name: MIDDLEWARE_API_PORT
+      value: nginx
+    - name: MIDDLEWARE_API_PORT
+      value: 80
+    - WORKERS_PER_CORE: 8
+
+nginx:
+  hostname: nginx
+  port:
+    name: nginx-clusterip
+    number: 80
+  selector:
+    name: nginx
+  nodeSelector:
+    type: compute
+  image: nginx:latest
+
+guacamole:
+  port:
+    name: guacamole-clusterip
+    number: 8080
+  selector:
+    name: guacamole
+  nodeSelector:
+    type: compute
+  image: 10.0.0.51:5000/guacamole/guacamole:1.3.0

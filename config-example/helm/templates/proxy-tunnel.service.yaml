@@ -1,0 +1,14 @@
+apiVersion: v2
+kind: Service
+metadata:
+  name: {{ .Values.proxytunnel.selector.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+  - name: {{ .Values.proxytunnel.port.name }}
+    port: {{ .Values.proxytunnel.port.number }}
+    protocol: TCP
+    targetPort: {{ .Values.proxytunnel.port.number }}
+  selector:
+    {{ toYaml .Values.proxytunnel.selector }}
+  type: ClusterIP

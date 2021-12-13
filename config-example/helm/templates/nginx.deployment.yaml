@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ toYaml .Values.nginx.selector.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      {{ toYaml .Values.nginx.selector }}
+  template:
+    metadata:
+      labels:
+        {{ toYaml .Values.nginx.selector }}
+    spec:
+      containers:
+      - image: {{ .Values.nginx.image }}
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: nginx.conf-vol
+            mountPath: /etc/nginx/nginx.conf
+        name: {{ .Values.nginx.selector.name }}
+        ports:
+        - containerPort: {{ .Values.nginx.port.number }}
+          name: {{ .Values.nginx.port.name }}
+          protocol: TCP
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      - image: {{ .Values.guacamole.image }}
+        imagePullPolicy: Always
+        name: {{ .Values.guacamole.selector.name }}
+        ports:
+        - containerPort: {{ .Values.guacamole.port.number }}
+          name: {{ .Values.guacamole.port.name }}
+          protocol: TCP
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      nodeSelector:
+        {{ toYaml .Values.nginx.nodeSelector }}
+      dnsPolicy: ClusterFirst
+      hostname: {{ .Values.nginx.hostname }}
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: nginx.conf-vol
+          configMap:
+            name: nginx.conf
+            items:
+              - key: nginx.conf
+                path: nginx.conf
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate

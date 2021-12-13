@@ -1,0 +1,14 @@
+apiVersion: v2
+kind: Service
+metadata:
+  name: {{ .Values.proxyapi.selector.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+  - name: {{ .Values.proxyapi.port.name }}
+    port: {{ .Values.proxyapi.port.number }}
+    protocol: TCP
+    targetPort: {{ .Values.proxyapi.port.number }}
+  selector:
+    {{ toYaml .Values.proxyapi.selector }}
+  type: ClusterIP

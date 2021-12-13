@@ -1,0 +1,14 @@
+apiVersion: v2
+kind: Service
+metadata:
+  name: {{ .Values.nginx.selector.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+  - name: {{ .Values.nginx.port.name }}
+    port: {{ .Values.nginx.port.number }}
+    protocol: TCP
+    targetPort: {{ .Values.nginx.port.number }}
+  selector:
+    {{ toYaml .Values.nginx.selector }}
+  type: ClusterIP
