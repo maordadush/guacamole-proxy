@@ -15,10 +15,10 @@ spec:
       containers:
       - image: {{ .Values.proxyapi.image }}
         env:
-        {{- range $key, $val := .Values.proxyapi.env }}
-          - name: {{ $key }}
-            value: {{ $val }}
-        {{- end }}
+          {{- range $key, $val := .Values.proxyapi.env }}
+            - name: {{ $key }}
+              value: {{ $val }}
+          {{- end }}
         imagePullPolicy: Always
         name: {{ .Values.proxyapi.selector.name }}
         ports:
