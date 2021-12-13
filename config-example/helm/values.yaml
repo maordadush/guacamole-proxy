@@ -1,7 +1,7 @@
 guacd:
   hostname: guacd
   port:
-    name: guacd-clusterip
+    name: guacd
     number: 4822
   selector:
     name: guacd
@@ -12,15 +12,15 @@ guacd:
 proxyapi:
   hostname: proxy-api
   port:
-    name: proxy-api-clusterip
+    name: proxyapi
     number: 80
   selector:
-    name: proxy-api
+    name: proxyapi
   nodeSelector:
     type: compute
   image: 10.0.0.51:5000/guacamole/proxy-api:1.0.0
   env:
-    - name: MIDDLEWARE_API_PORT
+    - name: MIDDLEWARE_API_HOST
       value: nginx
     - name: MIDDLEWARE_API_PORT
       value: 80
@@ -35,15 +35,15 @@ proxyapi:
 proxytunnel:
   hostname: proxy-tunnel
   port:
-    name: proxy-tunnel-clusterip
+    name: proxytunnel
     number: 80
   selector:
-    name: proxy-tunnel
+    name: proxytunnel
   nodeSelector:
     type: compute
   image: 10.0.0.51:5000/guacamole/proxy-tunnel:1.0.0
   env:
-    - name: MIDDLEWARE_API_PORT
+    - name: MIDDLEWARE_API_HOST
       value: nginx
     - name: MIDDLEWARE_API_PORT
       value: 80
@@ -52,7 +52,7 @@ proxytunnel:
 nginx:
   hostname: nginx
   port:
-    name: nginx-clusterip
+    name: nginx
     number: 80
   selector:
     name: nginx
@@ -62,7 +62,7 @@ nginx:
 
 guacamole:
   port:
-    name: guacamole-clusterip
+    name: guacamole
     number: 8080
   selector:
     name: guacamole
