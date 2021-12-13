@@ -1,0 +1,10 @@
+guacd:
+  hostname: guacd
+  port:
+    name: guacd-clusterip
+    number: 4822
+  selector:
+    name: guacd
+  nodeSelector:
+    type: gateway
+  image: 10.0.0.51:5000/guacamole/guacd:1.3.0
