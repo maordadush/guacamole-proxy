@@ -37,8 +37,8 @@ spec:
         terminationMessagePolicy: File
         env:
         {{- range $key, $val := .Values.guacamole.env }}
-          - name: {{ $key }}
-            value: {{ $val | quote }}
+        - name: {{ $key }}
+          value: {{ $val }}
         {{- end }}
       nodeSelector:
         {{ toYaml .Values.nginx.nodeSelector }}
