@@ -36,10 +36,20 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         env:
-          {{- range $key, $val := .Values.guacamole.env }}
-          - name: {{ $key }}
-            value: {{ $val }}
-          {{- end }}
+          - name: GUACD_HOSTNAME
+            value: {{ .Values.guacamole.env.GUACD_HOSTNAME }}
+          - name: GUACD_PORT
+            value: {{ .Values.guacamole.env.GUACD_PORT }}
+          - name: MYSQL_HOSTNAME
+            value: {{ .Values.guacamole.env.MYSQL_HOSTNAME }}
+          - name: MYSQL_PORT
+            value: {{ .Values.guacamole.env.MYSQL_PORT }}
+          - name: MYSQL_DATABASE
+            value: {{ .Values.guacamole.env.MYSQL_DATABASE }}
+          - name: MYSQL_USER
+            value: {{ .Values.guacamole.env.MYSQL_USER }}
+          - name: MYSQL_PASSWORD
+            value: {{ .Values.guacamole.env.MYSQL_PASSWORD }}
       nodeSelector:
         {{ toYaml .Values.nginx.nodeSelector }}
       dnsPolicy: ClusterFirst

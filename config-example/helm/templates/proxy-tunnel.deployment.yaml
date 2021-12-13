@@ -23,10 +23,12 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         env:
-          {{- range $key, $val := .Values.proxytunnel.env }}
-            - name: {{ $key }}
-              value: {{ $val }}
-          {{- end }}
+          - name: MIDDLEWARE_API_HOST
+            value: {{ .Values.proxytunnel.env.MIDDLEWARE_API_HOST }}
+          - name: MIDDLEWARE_API_PORT
+            value: {{ .Values.proxytunnel.env.MIDDLEWARE_API_PORT }}
+          - name: WORKERS_PER_CORE
+            value: {{ .Values.proxytunnel.env.WORKERS_PER_CORE }}
       nodeSelector:
         {{ toYaml .Values.proxytunnel.nodeSelector }}
       dnsPolicy: ClusterFirst
