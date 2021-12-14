@@ -5,7 +5,7 @@ metadata:
 spec:
   type: NodePort
   selector:
-    {{ .Values.haproxy.selector }}
+    {{ toYaml .Values.haproxy.selector }}
   ports:
       # By default and for convenience, the `targetPort` is set to the same value as the `port` field.
     - port: 80
