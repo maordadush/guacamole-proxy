@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ toYaml .Values.haproxy.selector.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      {{ toYaml .Values.haproxy.selector }}
+  template:
+    metadata:
+      labels:
+        {{ toYaml .Values.haproxy.selector }}
+    spec:
+      containers:
+      - image: {{ .Values.haproxy.image }}
+        imagePullPolicy: Always
+        name: {{ .Values.haproxy.selector.name }}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+          - name: haproxy-cfg-vol
+            mountPath: /usr/local/etc/haproxy/haproxy.cfg
+            subPath: haproxy.cfg
+      nodeSelector:
+        {{ toYaml .Values.haproxy.nodeSelector }}
+      dnsPolicy: ClusterFirst
+      hostname: {{ .Values.haproxy.hostname }}
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: haproxy-cfg-vol
+          configMap:
+            name: {{ .Values.haproxy.selector.name }}
+            items:
+              - key: haproxy.cfg
+                path: haproxy.cfg
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate

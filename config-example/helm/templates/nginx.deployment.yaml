@@ -59,7 +59,7 @@ spec:
       volumes:
         - name: nginx-conf-vol
           configMap:
-            name: nginx
+            name: {{ .Values.nginx.selector.name }}
             items:
               - key: nginx.conf
                 path: nginx.conf

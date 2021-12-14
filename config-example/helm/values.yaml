@@ -70,3 +70,11 @@ guacamole:
     MYSQL_DATABASE: guacamole_db
     MYSQL_USER: root
     MYSQL_PASSWORD: Password1!
+
+haproxy:
+  hostname: haproxy
+  selector:
+    name: haproxy
+  nodeSelector:
+    type: gateway
+  image: haproxy:latest

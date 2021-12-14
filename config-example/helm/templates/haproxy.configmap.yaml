@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.haproxy.selector.name }}
+data:
+  haproxy.cfg: |
+    resolvers test
+      nameserver dns1 kube-dns.kube-system:53
+      hold timeout         600s
+      hold refused         600s 
+    frontend guacamole_fe
+      bind *:80
+      default_backend guacamole_be
+    backend guacamole_be
+      mode http
+      balance roundrobin
+      dynamic-cookie-key cookie_key
+      cookie SRVID insert dynamic
+      option httpchk GET /
+      server-template srv 1-100 _nginx._tcp.nginx-headless.{{ .Release.Namespace }}.svc.cluster.local resolvers test check
