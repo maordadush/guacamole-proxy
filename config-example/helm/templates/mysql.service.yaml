@@ -8,6 +8,7 @@ spec:
   - name: {{ .Values.mysql.port.name }}
     port: {{ .Values.mysql.port.number }}
     protocol: TCP
+    targetPort: {{ .Values.mysql.port.number }}
   selector:
     {{ toYaml .Values.mysql.selector }}
   type: ClusterIP
