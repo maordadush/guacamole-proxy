@@ -20,7 +20,8 @@ spec:
         name: {{ .Values.mysql.selector.name }}
         lifecycle:
           postStart:
-            exec: mysql -u root -p{{ .Values.mysql.env.MYSQL_ROOT_PASSWORD }} < /initdb.mysql
+            exec:
+              command: mysql -u root -p{{ .Values.mysql.env.MYSQL_ROOT_PASSWORD }} < /initdb.mysql
         volumeMounts:
           - mountPath: /var/lib/mysql
             name: mysql-vol
