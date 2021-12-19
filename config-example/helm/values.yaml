@@ -65,7 +65,7 @@ guacamole:
   env:
     GUACD_HOSTNAME: guacd
     GUACD_PORT: 4822
-    MYSQL_HOSTNAME: mysql
+    MYSQL_HOSTNAME: guacamole-mysql
     MYSQL_PORT: 3306
     MYSQL_DATABASE: guacamole_db
     MYSQL_USER: root
@@ -80,7 +80,7 @@ haproxy:
   image: haproxy:latest
 
 mysql:
-  hostname: mysql
+  hostname: guacamole-mysql
   port:
     name: mysql
     number: 3306
