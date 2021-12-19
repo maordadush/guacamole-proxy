@@ -21,7 +21,7 @@ spec:
         lifecycle:
           postStart:
             exec:
-              command: mysql -u root -p{{ .Values.mysql.env.MYSQL_ROOT_PASSWORD }} < /initdb.mysql
+              command: ["/bin/sh", "-c", "mysql -u root -p{{ .Values.mysql.env.MYSQL_ROOT_PASSWORD }} < /initdb.mysql"]
         volumeMounts:
           - mountPath: /var/lib/mysql
             name: mysql-vol
