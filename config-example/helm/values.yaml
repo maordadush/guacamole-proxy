@@ -97,14 +97,15 @@ mysql:
   headlessName: mysql-headless
 
 # Longhorn node selector overrides
-longhornManager:
-  nodeSelector:
-    type: compute
-longhornDriver:
-  nodeSelector:
-    type: compute
-longhornUI:
-  nodeSelector:
-    type: compute
-defaultSettings:
-  replicaAutoBalance: best-effort
+longhorn:
+  longhornManager:
+    nodeSelector:
+      type: compute
+  longhornDriver:
+    nodeSelector:
+      type: compute
+  longhornUI:
+    nodeSelector:
+      type: compute
+  defaultSettings:
+    replicaAutoBalance: best-effort

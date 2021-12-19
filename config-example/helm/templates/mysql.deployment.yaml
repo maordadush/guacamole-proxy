@@ -18,9 +18,15 @@ spec:
       - image: {{ .Values.mysql.image }}
         imagePullPolicy: Always
         name: {{ .Values.mysql.selector.name }}
+        lifecycle:
+          postStart:
+            exec: mysql -u root -p{{ .Values.mysql.env.MYSQL_ROOT_PASSWORD }} < /initdb.mysql
         volumeMounts:
           - mountPath: /var/lib/mysql
             name: mysql-vol
+          - name: mysql-initdb-vol
+            mountPath: /initdb.mysql
+            subPath: initdb.mysql
         ports:
         - containerPort: {{ .Values.mysql.port.number }}
           name: {{ .Values.mysql.port.name }}
@@ -40,5 +46,11 @@ spec:
         - name: mysql-vol
           persistentVolumeClaim:
             claimName: {{ .Values.mysql.pvcName }}
+        - name: mysql-initdb-vol
+          configMap:
+            name: {{ .Values.mysql.selector.name }}
+            items:
+              - key: initdb.mysql
+                path: initdb.mysql
   updateStrategy:
     type: RollingUpdate
