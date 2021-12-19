@@ -94,6 +94,7 @@ mysql:
     MYSQL_ROOT_PASSWORD: Password1!
   storageClassName: longhorn
   pvcName: mysqlpvc
+  headlessName: mysql-headless
 
 # Longhorn node selector overrides
 longhornManager:

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.mysql.selector.name }}-headless
+  name: {{ .Values.mysql.headlessName }}
   namespace: {{ .Release.Namespace }}
 spec:
   clusterIP: None
