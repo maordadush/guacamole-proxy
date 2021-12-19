@@ -93,6 +93,7 @@ mysql:
   env:
     MYSQL_ROOT_PASSWORD: Password1!
   storageClassName: longhorn
+  pvcName: mysqlpvc
 
 # Longhorn node selector overrides
 longhornManager:
