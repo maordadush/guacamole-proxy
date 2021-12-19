@@ -1,3 +1,8 @@
 apiVersion: v2
 name: guacamole
-version: 0.21.0
+version: 0.22.0
+
+dependencies:
+  - name: longhorn/longhorn
+    version: "1.2.2"
+    repository: https://charts.longhorn.io

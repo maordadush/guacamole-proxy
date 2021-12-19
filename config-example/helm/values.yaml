@@ -78,3 +78,31 @@ haproxy:
   nodeSelector:
     type: gateway
   image: haproxy:latest
+
+mysql:
+  hostname: mysql
+  port:
+    name: mysql
+    number: 3306
+    headless: 80
+  selector:
+    name: mysql
+  nodeSelector:
+    type: compute
+  image: mysql:latest
+  env:
+    MYSQL_ROOT_PASSWORD: Password1!
+  storageClassName: longhorn
+
+# Longhorn node selector overrides
+longhornManager:
+  nodeSelector:
+    type: compute
+longhornDriver:
+  nodeSelector:
+    type: compute
+longhornUI:
+  nodeSelector:
+    type: compute
+defaultSettings:
+  replicaAutoBalance: best-effort
