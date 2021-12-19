@@ -1,6 +1,6 @@
 
-apiVersion: apps/v1
-kind: StatefulSet
+apiVersion: v1
+kind: Pod
 metadata:
   name: {{ toYaml .Values.mysql.selector.name }}
   namespace: {{ .Release.Namespace }}
@@ -8,7 +8,6 @@ spec:
   selector:
     matchLabels:
       {{ toYaml .Values.mysql.selector }}
-  serviceName: {{ .Values.mysql.headlessName }}
   template:
     metadata:
       labels:
@@ -40,5 +39,3 @@ spec:
         - name: mysql-vol
           persistentVolumeClaim:
             claimName: {{ .Values.mysql.pvcName }}
-  updateStrategy:
-    type: RollingUpdate

@@ -1,15 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.mysql.headlessName }}
+  name: {{ .Values.mysql.selector.name }}
   namespace: {{ .Release.Namespace }}
 spec:
-  clusterIP: None
   ports:
   - name: {{ .Values.mysql.port.name }}
-    port: {{ .Values.mysql.port.headless }}
+    port: {{ .Values.mysql.port.number }}
     protocol: TCP
-    targetPort: {{ .Values.mysql.port.number }}
   selector:
     {{ toYaml .Values.mysql.selector }}
   type: ClusterIP

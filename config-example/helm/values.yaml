@@ -84,7 +84,6 @@ mysql:
   port:
     name: mysql
     number: 3306
-    headless: 80
   selector:
     name: mysql
   nodeSelector:
@@ -94,7 +93,6 @@ mysql:
     MYSQL_ROOT_PASSWORD: Password1!
   storageClassName: longhorn
   pvcName: mysqlpvc
-  headlessName: mysql-headless
 
 # Longhorn node selector overrides
 longhorn:
