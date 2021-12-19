@@ -40,4 +40,5 @@ spec:
         - name: mysql-vol
           persistentVolumeClaim:
             claimName: {{ .Values.mysql.pvcName }}
+  updateStrategy:
     type: RollingUpdate
