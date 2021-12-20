@@ -39,8 +39,3 @@ spec:
       hostname: {{ .Values.proxyapi.hostname }}
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
-  updateStrategy:
-    rollingUpdate:
-      maxSurge: 0
-      maxUnavailable: 1
-    type: RollingUpdate
