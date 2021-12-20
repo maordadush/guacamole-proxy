@@ -75,6 +75,9 @@ haproxy:
   hostname: haproxy
   selector:
     name: haproxy
+  port:
+    name: haproxy
+    number: 8080
   nodeSelector:
     type: gateway
   image: haproxy:latest
