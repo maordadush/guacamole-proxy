@@ -9,5 +9,5 @@ spec:
   ports:
       # By default and for convenience, the `targetPort` is set to the same value as the `port` field.
     - port: 80
-      targetPort: 80
+      targetPort: {{ .Values.haproxy.port.number }}
       nodePort: 30000

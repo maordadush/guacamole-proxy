@@ -9,7 +9,7 @@ data:
       hold timeout         600s
       hold refused         600s 
     frontend guacamole_fe
-      bind *:80
+      bind *:{{ .Values.haproxy.port.number }}
       default_backend guacamole_be
     backend guacamole_be
       mode http
