@@ -97,8 +97,8 @@ mysql:
   storageClassName: longhorn
   pvcName: mysqlpvc
 
-# Longhorn node selector overrides
 longhorn:
+  namespaceOverride: guacamole
   longhornManager:
     nodeSelector:
       type: compute
