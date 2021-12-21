@@ -21,7 +21,7 @@ proxyapi:
   image: dadushacr.azurecr.io/guacamole/proxy-api:1.0.0
   env:
     MIDDLEWARE_API_HOST: nginx
-    MIDDLEWARE_API_PORT: 8080
+    MIDDLEWARE_API_PORT: 80
     WORKERS_PER_CORE: 8
     TIMEOUT: "9999999"
     GRACEFUL_TIMEOUT: "9999999"
@@ -46,7 +46,7 @@ nginx:
   hostname: nginx
   port:
     name: nginx
-    number: 8080
+    number: 80
   selector:
     name: nginx
   nodeSelector:
@@ -56,7 +56,7 @@ nginx:
 guacamole:
   port:
     name: guacamole
-    number: 8081
+    number: 8080
   selector:
     name: guacamole
   nodeSelector:
