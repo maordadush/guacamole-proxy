@@ -25,6 +25,10 @@ spec:
             value: {{ .Values.proxyapi.env.TIMEOUT | quote }}
           - name: GRACEFUL_TIMEOUT
             value: {{ .Values.proxyapi.env.GRACEFUL_TIMEOUT | quote }}
+          - name: HOST
+            value: {{ .Values.proxytunnel.env.HOST | quote }}
+          - name: PORT
+            value: {{ .Values.proxytunnel.env.PORT | quote }}
         imagePullPolicy: Always
         name: {{ .Values.proxyapi.selector.name }}
         ports:

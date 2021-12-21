@@ -25,6 +25,8 @@ proxyapi:
     WORKERS_PER_CORE: 8
     TIMEOUT: "9999999"
     GRACEFUL_TIMEOUT: "9999999"
+    HOST: "0.0.0.0"
+    PORT: 8080
     
 
 proxytunnel:
@@ -41,6 +43,8 @@ proxytunnel:
     MIDDLEWARE_API_HOST: nginx
     MIDDLEWARE_API_PORT: 80
     WORKERS_PER_CORE: 8
+    HOST: "0.0.0.0"
+    PORT: 8080
 
 nginx:
   hostname: nginx
@@ -98,7 +102,6 @@ mysql:
   pvcName: mysqlpvc
 
 longhorn:
-  namespaceOverride: guacamole
   longhornManager:
     nodeSelector:
       type: compute

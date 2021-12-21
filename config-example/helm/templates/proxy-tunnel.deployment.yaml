@@ -29,6 +29,10 @@ spec:
             value: {{ .Values.proxytunnel.env.MIDDLEWARE_API_PORT | quote }}
           - name: WORKERS_PER_CORE
             value: {{ .Values.proxytunnel.env.WORKERS_PER_CORE | quote }}
+          - name: HOST
+            value: {{ .Values.proxytunnel.env.HOST | quote }}
+          - name: PORT
+            value: {{ .Values.proxytunnel.env.PORT | quote }}
       nodeSelector:
         {{ toYaml .Values.proxytunnel.nodeSelector }}
       dnsPolicy: ClusterFirst
