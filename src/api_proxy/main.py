@@ -39,14 +39,21 @@ async def proxy_download(request: Request):
     octet_stream_media_type = 'application/octet-stream'
 
     def get_file_content_iterator():
-        filename_modification_response = requests.get(
-            f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/download/filename?filename={original_filename}',
-            timeout=1.5)
-        if filename_modification_response.status_code != 200:
-            logging.error(
-                f'Filename modification request failed. status_code: {filename_modification_response.status_code}, text: {filename_modification_response.text}')
+        modified_filename = None
+        file_modification_timeout = 1.5
+        try:
+            filename_modification_response = requests.get(
+                f'http://{config.middleware_api_host}:{config.middleware_api_port}/validations/download/filename?filename={original_filename}',
+                timeout=file_modification_timeout)
+            if filename_modification_response.status_code == 200:
+                modified_filename = filename_modification_response.text
+            else:
+                logging.error(
+                    f'Filename modification request failed. status_code: {filename_modification_response.status_code}, text: {filename_modification_response.text}')
+        except requests.exceptions.ReadTimeout:
+            logging.error(f'Filename modification request timed out. Timeout: {str(file_modification_timeout)}')
             raise StopIteration()
-        modified_filename = filename_modification_response.text
+
         # Wrapping file content in a zip in order to return any valid data ASAP (zip file header)
         zip_stream = ZipFile(mode='w')
         zip_header, zip_info = zip_stream.write_header(
@@ -108,7 +115,8 @@ async def proxy_upload(request: Request):
                                                 headers={'Content-Type': octet_stream_media_type})
         guacamole_response_text = await guacamole_response.text()
         if guacamole_response.status != 200:
-            logging.warn(f'Upload file to guacamole failed. Guacamole response: {guacamole_response_text}, Username: {username}, filename: {filename}, status_code: {guacamole_response.status}, token: {token}')
+            logging.warn(
+                f'Upload file to guacamole failed. Guacamole response: {guacamole_response_text}, Username: {username}, filename: {filename}, status_code: {guacamole_response.status}, token: {token}')
         response = Response(guacamole_response_text, headers=guacamole_response.headers,
                             status_code=guacamole_response.status, media_type=octet_stream_media_type)
         guacamole_response.close()
