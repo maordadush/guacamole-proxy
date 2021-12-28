@@ -34,7 +34,7 @@ spec:
           - name: PORT
             value: {{ .Values.proxytunnel.env.PORT | quote }}
       imagePullSecrets:
-        - name: acrCredentials
+        - name: acr-credentials
       nodeSelector:
         {{ toYaml .Values.proxytunnel.nodeSelector }}
       dnsPolicy: ClusterFirst

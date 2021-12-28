@@ -23,7 +23,7 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
       imagePullSecrets:
-        - name: acrCredentials
+        - name: acr-credentials
       nodeSelector:
         {{ toYaml .Values.guacd.nodeSelector }}
       dnsPolicy: ClusterFirst
