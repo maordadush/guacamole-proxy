@@ -50,6 +50,8 @@ spec:
             value: {{ .Values.guacamole.env.MYSQL_USER | quote }}
           - name: MYSQL_PASSWORD
             value: {{ .Values.guacamole.env.MYSQL_PASSWORD | quote }}
+      imagePullSecrets:
+        - name: acrCredentials
       nodeSelector:
         {{ toYaml .Values.nginx.nodeSelector }}
       dnsPolicy: ClusterFirst
