@@ -38,6 +38,30 @@ def remove_datetime_from_modified_message(input_message: str) -> str:
     input_message += ';'
     return input_message
 
+def split_multimessage(message: str) -> List[str]:
+    """
+    Guacamole messages sometimes arrive as multiple concatenated messages, separated by a semicolon.
+    You cannot use split(';') to split them because a parts content may contain a semicolon
+    """
+    message_parts = []
+    last_part_found = False
+    current_part_index = 0
+    while not last_part_found:
+        part_content, part_index = get_part(message, current_part_index) 
+        if part_index != 0 and message[part_index - 1] == ';':
+            message_parts.append(message[0:part_index])
+            message = message[part_index:]
+            current_part_index = 0
+        else:
+            current_part_index += 1
+
+        # if content length's length + dot + content length + semicolon == message length (guacamole message format)
+        if part_index + len(str(len(part_content))) + 1 + len(part_content) + 1 == len(message):
+            last_part_found = True
+            message_parts.append(message[0:])
+    return message_parts
+
+
 
 class MiddlewareClipboardError(Exception):
     pass

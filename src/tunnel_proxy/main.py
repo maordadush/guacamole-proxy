@@ -12,7 +12,7 @@ import aiohttp
 from config import EnvConfig
 from custom_loggers import ReverseRotatingFileHandler
 from guac_message import get_part, get_part_content, remove_datetime_from_modified_message, \
-    GuacamoleClipboardHandler, MiddlewareClipboardError
+    GuacamoleClipboardHandler, MiddlewareClipboardError, split_multimessage
 
 
 config = EnvConfig()
@@ -67,7 +67,6 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
             clipboard_handler = GuacamoleClipboardHandler(
                 True, 8000, config.middleware_api_host, config.middleware_api_port, server_socket.send)
             async for input_message in client_socket.iter_text():
-                # input_message = await client_socket.receive_text()
                 message_type = get_part_content(input_message, 0)
                 if message_type == 'put':  # file upload
                     asyncio.create_task(handle_websocket_put(
@@ -106,10 +105,8 @@ async def ws_tunnel_proxy(client_socket: WebSocket):
             message_load_consecutive_exceeding_counter = 0
             async for output_message in server_socket:
                 # messages sometime contain multiple messages
-                messages = map(
-                    lambda m: f'{m};', output_message.split(';')[:-1])
                 modified_messages = ''
-                for message in messages:
+                for message in split_multimessage(output_message):
                     message_type = get_part_content(message, 0)
                     if message_type == 'clipboard':
                         modified_messages += message
