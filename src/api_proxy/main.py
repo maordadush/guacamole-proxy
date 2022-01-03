@@ -51,7 +51,8 @@ async def proxy_download(request: Request):
                 logging.error(
                     f'Filename modification request failed. status_code: {filename_modification_response.status_code}, text: {filename_modification_response.text}')
         except requests.exceptions.ReadTimeout:
-            logging.error(f'Filename modification request timed out. Timeout: {str(file_modification_timeout)}')
+            logging.error(
+                f'Filename modification request timed out. Timeout: {str(file_modification_timeout)}')
             raise StopIteration()
 
         # Wrapping file content in a zip in order to return any valid data ASAP (zip file header)
@@ -123,7 +124,9 @@ async def proxy_upload(request: Request):
     else:
         logging.warn(
             f'Upload file middleware validation failed. Username: {username}, filename: {filename}, token: {token}, status_code: {middleware_response.status}')
-        response = Response(status_code=middleware_response.status)
+        middleware_response_text = (await middleware_response.text())
+        response = Response(
+            content=middleware_response_text if middleware_response_text else 'An unknown file validation error occurred.', status_code=599)
     middleware_response.close()
     await session.close()
     return response
