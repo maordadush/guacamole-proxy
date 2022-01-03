@@ -22,6 +22,9 @@ spec:
           protocol: TCP
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
+        env:
+          - name: GUACD_LOG_LEVEL
+            value: {{ .Values.guacd.env.GUACD_LOG_LEVEL | quote }}
       imagePullSecrets:
         - name: acr-credentials
       nodeSelector:

@@ -8,6 +8,8 @@ guacd:
   nodeSelector:
     type: compute
   image: dadushacr.azurecr.io/guacamole/guacd:1.3.0
+  env:
+    GUACD_LOG_LEVEL: debug
 
 proxyapi:
   hostname: proxy-api
