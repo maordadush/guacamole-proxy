@@ -16,6 +16,9 @@ spec:
       - image: {{ .Values.guacd.image }}
         imagePullPolicy: Always
         name: {{ .Values.guacd.selector.name }}
+        volumeMounts:
+          - mountPath: /tmp/shared_folder
+            name: guacd-vol
         ports:
         - containerPort: {{ .Values.guacd.port.number }}
           name: {{ .Values.guacd.port.name }}
@@ -33,3 +36,7 @@ spec:
       hostname: {{ .Values.guacd.hostname }}
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
+      volumes:
+        - name: guacd-vol
+          persistentVolumeClaim:
+            claimName: {{ .Values.guacd.pvcName }}
