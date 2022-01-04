@@ -10,6 +10,8 @@ guacd:
   image: dadushacr.azurecr.io/guacamole/guacd:1.3.0
   env:
     GUACD_LOG_LEVEL: debug
+  storageClassName: longhorn
+  pvcName: guacdpvc
 
 proxyapi:
   hostname: proxy-api
